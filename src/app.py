@@ -1,16 +1,7 @@
 import os
 from functools import wraps
 
-from flask import (
-    Flask,
-    flash,
-    g,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
 from db import get_db, init_db
@@ -19,6 +10,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 app.secret_key = "pytestlms-dev-secret-key"
+
+ROLE_LABELS = {"admin": "Преподаватель", "student": "Студент"}
 
 
 def get_user():
@@ -37,10 +30,8 @@ def login_required(f):
         if "user_id" not in session:
             return redirect(url_for("login"))
         return f(*args, **kwargs)
+
     return wrapper
-
-
-ROLE_LABELS = {"admin": "Преподаватель", "student": "Студент"}
 
 
 @app.context_processor
