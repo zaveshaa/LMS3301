@@ -8,32 +8,32 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif; background: #f6f7fb; color: #17213a; min-height: 100vh; }
 
-  header { background: #fff; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.04); padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
+  header { background: #fff; border-bottom: 1px solid #e3e6ef; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
   header .logo { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 700; text-decoration: none; color: #17213a; letter-spacing: .3px; }
-  header .logo .logo-mark { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #6d5cff, #4f8cff); color: #fff; display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 800; }
+  header .logo .logo-mark { width: 28px; height: 28px; background: #2b3a63; color: #fff; display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 800; }
   header nav { display: flex; gap: 18px; align-items: center; }
   header nav a { color: #4b5563; text-decoration: none; font-size: .85rem; font-weight: 500; }
-  header nav a:hover { color: #6d5cff; }
+  header nav a:hover { color: #2b3a63; }
   header .user-info { display: flex; align-items: center; gap: 10px; font-size: .85rem; color: #17213a; font-weight: 500; }
-  header .role-badge { background: #f0eeff; color: #6d5cff; font-size: .72rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+  header .role-badge { background: #eceff5; color: #2b3a63; font-size: .72rem; font-weight: 600; padding: 4px 10px; }
 
   main { max-width: 920px; margin: 40px auto; padding: 0 24px; }
-  .card { background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 1px 3px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06); margin-bottom: 18px; }
+  .card { background: #fff; border: 1px solid #e3e6ef; padding: 28px; margin-bottom: 18px; }
   .card h1 { font-size: 1.35rem; font-weight: 700; margin-bottom: 8px; color: #131c3a; }
   .card h2 { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; color: #1f2a4a; }
 
-  .flash { background: #fef3c7; border: 1px solid #fbd38d; color: #92400e; padding: 12px 16px; border-radius: 12px; margin-bottom: 18px; font-size: .85rem; }
+  .flash { background: #fff8e1; border: 1px solid #e8d08a; color: #6b4e0a; padding: 12px 16px; margin-bottom: 18px; font-size: .85rem; }
 
-  .btn { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #6d5cff, #4f8cff); color: #fff; border: none; padding: 10px 22px; border-radius: 10px; cursor: pointer; font-size: .9rem; font-weight: 600; text-decoration: none; transition: transform .05s ease, opacity .15s ease; }
-  .btn:hover { opacity: .92; }
-  .btn:active { transform: translateY(1px); }
-  .btn-danger { background: linear-gradient(135deg, #f43f5e, #ef4444); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; background: #2b3a63; color: #fff; border: none; padding: 10px 22px; cursor: pointer; font-size: .9rem; font-weight: 600; text-decoration: none; transition: background .15s ease; }
+  .btn:hover { background: #1f2a4a; }
+  .btn-danger { background: #c0392b; }
+  .btn-danger:hover { background: #a93226; }
 
-  .btn-outline { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #4b5563; border: 1px solid #d9deeb; padding: 10px 22px; border-radius: 10px; cursor: pointer; font-size: .9rem; font-weight: 500; text-decoration: none; transition: background .15s ease; }
+  .btn-outline { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #4b5563; border: 1px solid #d9deeb; padding: 10px 22px; cursor: pointer; font-size: .9rem; font-weight: 500; text-decoration: none; transition: background .15s ease; }
   .btn-outline:hover { background: #f6f7fb; }
 
-  input[type="text"], input[type="password"], textarea, select { width: 100%; padding: 10px 14px; border: 1px solid #d9deeb; border-radius: 10px; font-size: .92rem; margin-bottom: 14px; background: #fbfcfe; color: #17213a; transition: border-color .15s ease, box-shadow .15s ease; }
-  input:focus, textarea:focus, select:focus { outline: none; border-color: #6d5cff; box-shadow: 0 0 0 4px rgba(109,92,255,.12); background: #fff; }
+  input[type="text"], input[type="password"], textarea, select { width: 100%; padding: 10px 14px; border: 1px solid #d9deeb; font-size: .92rem; margin-bottom: 14px; background: #fff; color: #17213a; transition: border-color .15s ease; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #2b3a63; }
 
   label { display: block; font-size: .82rem; color: #5b6478; margin-bottom: 6px; font-weight: 500; }
 
