@@ -43,6 +43,16 @@
 
   .meta { color: #8a93a8; font-size: .82rem; }
   .muted { color: #8a93a8; }
+
+  .type-badge { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; padding: 3px 8px; }
+  .type-lecture { color: #1d4ed8; background: #eff6ff; }
+  .type-practical { color: #065f46; background: #ecfdf5; }
+
+  .statement { font-family: Georgia, "Times New Roman", "Liberation Serif", serif; font-size: 1rem; line-height: 1.65; color: #1f2937; }
+  .statement h1 { font-family: inherit; }
+  .statement .tags { margin: 6px 0 2px; }
+  .tag { display: inline-block; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; font-size: .68rem; border: 1px solid #2b3a63; color: #2b3a63; padding: 2px 8px; margin-right: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .statement pre { font-family: "SF Mono", Menlo, Consolas, "Courier New", monospace; font-size: .88rem; line-height: 1.55; background: #fbfcfe; border: 1px solid #e3e6ef; padding: 14px 16px; overflow-x: auto; margin-top: 18px; white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -50,6 +60,9 @@
   <a class="logo" href="{{ url_for('home') if current_login else url_for('login') }}">LMS3301</a>
   {% if current_login %}
   <nav>
+    {% if current_role == 'student' %}
+    <a href="{{ url_for('student_cabinet') }}">Works</a>
+    {% endif %}
     <span class="user-info">{{ current_login }}<span class="role-badge">{{ role_label }}</span></span>
     <a href="{{ url_for('logout') }}">Logout</a>
   </nav>

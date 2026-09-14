@@ -12,6 +12,7 @@ app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 app.secret_key = "pytestlms-dev-secret-key"
 
 ROLE_LABELS = {"admin": "Преподаватель", "student": "Студент"}
+TYPE_LABELS = {"lecture": "Lecture", "practical": "Practical"}
 
 
 def get_user():
@@ -34,6 +35,22 @@ def login_required(f):
     return wrapper
 
 
+def role_required(*roles):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            user = get_user()
+            if user is None:
+                return redirect(url_for("login"))
+            if user["role"] != "admin" and user["role"] not in roles:
+                return redirect(url_for("home"))
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 @app.context_processor
 def inject_user():
     user = get_user()
@@ -41,6 +58,7 @@ def inject_user():
         "current_login": user["login"] if user else None,
         "current_role": user["role"] if user else None,
         "role_label": ROLE_LABELS.get(user["role"], user["role"]) if user else None,
+        "type_label": TYPE_LABELS,
     }
 
 
@@ -67,6 +85,9 @@ def login():
 @app.route("/home")
 @login_required
 def home():
+    user = get_user()
+    if user["role"] == "student":
+        return redirect(url_for("student_cabinet"))
     return render_template("home.html")
 
 
@@ -74,6 +95,29 @@ def home():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+
+@app.route("/student")
+@login_required
+@role_required("student")
+def student_cabinet():
+    db = get_db()
+    works = db.execute("SELECT * FROM works ORDER BY type, id").fetchall()
+    db.close()
+    return render_template("cabinet.html", works=works)
+
+
+@app.route("/student/works/<int:work_id>")
+@login_required
+@role_required("student")
+def student_work(work_id):
+    db = get_db()
+    work = db.execute("SELECT * FROM works WHERE id = ?", (work_id,)).fetchone()
+    db.close()
+    if work is None:
+        flash("Work not found")
+        return redirect(url_for("student_cabinet"))
+    return render_template("work_detail.html", work=work)
 
 
 if __name__ == "__main__":

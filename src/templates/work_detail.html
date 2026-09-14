@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ work.title }} — LMS3301{% endblock %}
+{% block content %}
+<div class="card">
+  <p class="meta" style="margin-bottom:10px;">
+    <a href="{{ url_for('student_cabinet') }}">&larr; Works</a>
+  </p>
+  <div class="statement">
+    <h1>{{ work.title }}</h1>
+    <div class="tags">
+      <span class="tag">{{ type_label[work['type']] }}</span>
+    </div>
+    <p class="meta">{{ work.description }}</p>
+    <pre>{{ work.content }}</pre>
+  </div>
+</div>
+{% endblock %}
