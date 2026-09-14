@@ -41,39 +41,36 @@
   .type-lecture { color: #1d4ed8; background: #eff6ff; }
   .type-practical { color: #065f46; background: #ecfdf5; }
 
-  .work-item { display: flex; align-items: center; gap: 20px; background: #fff; border: 1px solid #e3e6ef; border-left: 4px solid #2b3a63; padding: 24px 26px; margin-bottom: 14px; text-decoration: none; color: inherit; transition: border-color .15s ease, background .15s ease; }
+  .work-item { display: block; background: #fff; border: 1px solid #e3e6ef; border-left: 4px solid #2b3a63; padding: 24px 26px; margin-bottom: 14px; text-decoration: none; color: inherit; transition: border-color .15s ease, background .15s ease; }
   .work-item:hover { border-color: #2b3a63; background: #fbfcff; }
-  .work-item .work-body { flex: 1; }
   .work-item .work-title { font-size: 1.1rem; font-weight: 600; color: #131c3a; margin: 8px 0 4px; }
   .work-item .work-desc { font-size: .88rem; color: #6b7280; line-height: 1.45; }
-  .work-item .work-arrow { font-size: 1.2rem; color: #b6bdc9; flex-shrink: 0; }
 
   .task-list { list-style: none; margin-top: 20px; }
   .task-list li { border-bottom: 1px solid #eceef4; }
   .task-list li:last-child { border-bottom: none; }
-  .task-link { display: flex; align-items: center; gap: 16px; padding: 18px 8px; text-decoration: none; color: inherit; }
-  .task-link:hover .task-name { color: #1d4ed8; }
-  .task-link .task-no { width: 30px; height: 30px; border: 1px solid #d9deeb; color: #8a93a8; display: flex; align-items: center; justify-content: center; font-size: .8rem; flex-shrink: 0; font-family: "SF Mono", Menlo, monospace; }
+  .task-link { display: block; padding: 16px 6px; text-decoration: none; color: inherit; }
+  .task-link:hover { color: #1d4ed8; }
   .task-link .task-name { font-size: .98rem; font-weight: 500; color: #17213a; }
 
   .page-title { font-weight: 700; margin-bottom: 4px; }
   .back-link { color: #4b5563; text-decoration: none; font-size: .85rem; }
   .back-link:hover { color: #1d4ed8; }
 
-  .section-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .8px; font-weight: 600; color: #8a93a8; margin: 30px 0 12px; }
+  .section-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .8px; font-weight: 600; color: #8a93a8; margin: 28px 0 10px; }
+  .section-label:first-of-type { margin-top: 0; }
 
-  .task-statement { font-family: Georgia, "Times New Roman", "Liberation Serif", serif; font-size: 1.04rem; line-height: 1.75; color: #111827; white-space: pre-line; border-left: 3px solid #2b3a63; padding: 2px 0 2px 20px; margin-top: 16px; }
+  .statement-block { font-size: .96rem; line-height: 1.7; color: #111827; white-space: pre-line; }
+  .statement-block.lecture { font-family: Georgia, "Times New Roman", serif; }
 
-  .examples-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-  .examples-table th { text-align: left; font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; color: #4b5563; background: #f6f7fb; padding: 10px 14px; border: 1px solid #d9deeb; }
-  .examples-table td { padding: 12px 14px; border: 1px solid #eceef4; vertical-align: top; }
-  .examples-table td.mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .86rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .examples-table { width: 100%; border-collapse: collapse; font-size: .86rem; margin-top: 10px; }
+  .examples-table th { text-align: left; font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; color: #4b5563; background: #f7f8fb; padding: 9px 12px; border: 1px solid #e0e3ea; }
+  .examples-table td { padding: 10px 12px; border: 1px solid #eceef4; vertical-align: top; }
+  .examples-table td.mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .84rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
 
   .code-editor { width: 100%; min-height: 260px; padding: 14px; border: 1px solid #d9deeb; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .88rem; line-height: 1.5; background: #fff; color: #17213a; resize: vertical; margin-bottom: 10px; }
   .code-editor:focus { outline: none; border-color: #2b3a63; }
   .solution-actions { display: flex; gap: 12px; }
-
-  .placeholder-note { border: 1px dashed #d9deeb; padding: 22px; color: #8a93a8; font-size: .88rem; }
 </style>
 </head>
 <body>
