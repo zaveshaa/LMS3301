@@ -1,13 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Home — LMS3301{% endblock %}
 {% block content %}
-<div class="card" style="padding:32px;">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap;">
-    <div>
-      <h1>Hello, {{ current_login }}!</h1>
-      <p class="meta">You are signed in as <strong style="color:#2b3a63;">{{ role_label }}</strong>.</p>
-    </div>
-    <span style="background:#eceff5; color:#2b3a63; font-size:.75rem; font-weight:600; padding:6px 14px;">{{ role_label }}</span>
-  </div>
+<div class="card">
+  <p>{{ current_login }} <span class="meta">{{ role_label }}</span></p>
 </div>
 {% endblock %}
