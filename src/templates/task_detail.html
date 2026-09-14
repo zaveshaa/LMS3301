@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ task.title }} — LMS3301{% endblock %}
+{% block content %}
+<div class="card">
+  <p style="margin-bottom:16px;">
+    <a class="back-link" href="{{ url_for('student_work', work_id=work.id) }}">&larr; {{ work.title }}</a>
+  </p>
+
+  <div style="display:flex; gap:32px; align-items:flex-start;">
+    <div style="flex:1; min-width:0;">
+      <div class="task-statement-wrap">
+        <div class="task-rate">{{ task_no }}</div>
+        <div>
+          <div class="page-title">{{ task.title }}</div>
+          <p class="meta">Work: {{ work.title }}</p>
+        </div>
+      </div>
+
+      <div class="section-label">Statement</div>
+      <div class="task-text">{{ task.statement }}</div>
+
+      {% if task.input_format or task.output_format %}
+      <div class="section-label">Input and Output Formats</div>
+      <div class="task-formats">
+{% if task.input_format %}
+Input: {{ task.input_format }}
+{% endif %}
+{% if task.output_format %}
+Output: {{ task.output_format }}
+{% endif %}
+      </div>
+      {% endif %}
+
+      <div class="section-label">Example Tests</div>
+      <table class="tests-table">
+        <thead>
+          <tr><th style="width:8%">#</th><th style="width:46%">Input</th><th style="width:46%">Expected output</th></tr>
+        </thead>
+        <tbody>
+          {% for tc in tests %}
+          <tr>
+            <td style="color:#8a93a8;">{{ loop.index }}</td>
+            <td class="mono">{% if tc['input_data'] %}{{ tc['input_data'] }}{% else %}(empty){% endif %}</td>
+            <td class="mono">{{ tc['output_data'] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="section-label">Your Solution</div>
+      <textarea class="code-editor" name="code" placeholder="# write your Python code here" spellcheck="false"></textarea>
+      <div>
+        <button class="btn" type="button">Run tests</button>
+        <button class="btn-outline" type="button">Submit for review</button>
+      </div>
+    </div>
+
+    {% if tasks | length > 1 %}
+    <div style="width:220px; flex-shrink:0;">
+      <p class="section-label" style="margin-top:0;">Tasks</p>
+      <ul class="task-list" style="border:1px solid #eceef4;">
+        {% for t in tasks %}
+        <li {% if t.id == task.id %}style="background:#eceff5;"{% endif %}>
+          <a class="task-link" style="padding:12px 6px;"
+            href="{{ url_for('student_task', work_id=work.id, task_id=t.id) }}">
+            <span class="{% if t.id == task.id %}task-name{% endif %}" style="font-size:.85rem; color:{% if t.id != task.id %}#17213a{% else %}#17213a; font-weight:600;{% endif %}">
+              {{ loop.index }}. {{ t.title }}
+            </span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

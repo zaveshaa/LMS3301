@@ -113,11 +113,30 @@ def student_cabinet():
 def student_work(work_id):
     db = get_db()
     work = db.execute("SELECT * FROM works WHERE id = ?", (work_id,)).fetchone()
-    db.close()
     if work is None:
         flash("Work not found")
         return redirect(url_for("student_cabinet"))
-    return render_template("work_detail.html", work=work)
+    tasks = db.execute("SELECT * FROM tasks WHERE work_id = ?", (work_id,)).fetchall()
+    db.close()
+    return render_template("work_detail.html", work=work, tasks=tasks)
+
+
+@app.route("/student/works/<int:work_id>/tasks/<int:task_id>")
+@login_required
+@role_required("student")
+def student_task(work_id, task_id):
+    db = get_db()
+    work = db.execute("SELECT * FROM works WHERE id = ?", (work_id,)).fetchone()
+    task = db.execute("SELECT * FROM tasks WHERE id = ? AND work_id = ?", (task_id, work_id)).fetchone()
+    if work is None or task is None:
+        flash("Task not found")
+        return redirect(url_for("student_cabinet"))
+    tests = db.execute("SELECT * FROM tests WHERE task_id = ?", (task_id,)).fetchall()
+    tasks = db.execute("SELECT id, title FROM tasks WHERE work_id = ?", (work_id,)).fetchall()
+    task_ids = [t["id"] for t in tasks]
+    task_no = task_ids.index(task_id) + 1 if task_id in task_ids else None
+    db.close()
+    return render_template("task_detail.html", work=work, task=task, tests=tests, tasks=tasks, task_no=task_no)
 
 
 if __name__ == "__main__":

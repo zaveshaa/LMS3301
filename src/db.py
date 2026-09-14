@@ -33,6 +33,23 @@ def init_db():
             created_by INTEGER REFERENCES users(id),
             created_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            work_id INTEGER NOT NULL REFERENCES works(id),
+            title TEXT NOT NULL,
+            statement TEXT NOT NULL DEFAULT '',
+            input_format TEXT NOT NULL DEFAULT '',
+            output_format TEXT NOT NULL DEFAULT '',
+            created_by INTEGER REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS tests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL REFERENCES tasks(id),
+            input_data TEXT NOT NULL,
+            output_data TEXT NOT NULL
+        );
         """
     )
 
@@ -51,33 +68,35 @@ def init_db():
     empty = db.execute("SELECT COUNT(*) FROM works").fetchone()[0] == 0
     if empty:
         now = datetime.now().strftime("%d.%m %H:%M")
-        seed_works = [
-            (
-                "Introduction to Programming",
-                "lecture",
-                "The very first lecture: what a program is, why Python.",
-                """Course: Programming Fundamentals.
+        db.executemany(
+            "INSERT INTO works (title, type, description, content, created_by, created_at) VALUES (?, ?, ?, ?, 1, ?)",
+            [
+                (
+                    "Introduction to Programming",
+                    "lecture",
+                    "The very first lecture: what a program is, why Python.",
+                    """Course: Programming Fundamentals.
 
 A program is a sequence of instructions that a computer executes. We write programs in a
 programming language such as Python, and the computer translates them into actions.
 
 In this course you will learn how to think like a programmer: to break a problem into steps
-and express each step precisely.
-
-Each lecture is followed by a practical work. Complete it to fix the material.""",
-            ),
-            (
-                "Data Types and Variables",
-                "lecture",
-                "Integers, floating point numbers, strings and how to store values.",
-                """Data Types and Variables.
+and express each step precisely. Every lecture is followed by a practical work. Complete
+every task to fix the material.""",
+                    now,
+                ),
+                (
+                    "Data Types and Variables",
+                    "lecture",
+                    "Integers, floating point numbers, strings and how to store values.",
+                    """Data Types and Variables.
 
 Any value we work with has a type: the kind of data it is and what operations are allowed
 on it. The basic types in Python:
 
-    int     - integer numbers: 5, -3, 0, 10**9
-    float   - real numbers: 3.14, -1.0, 2.5e3
-    str     - text: "hello", 'world'
+    int     - integer numbers: 5, -3, 0
+    float   - real numbers: 3.14, -1.0, 2.5
+    str     - text: "hello", "world"
     bool    - logical value: True, False
 
 A variable is a named container that stores one value. Assignment binds a name to a value:
@@ -87,12 +106,13 @@ A variable is a named container that stores one value. Assignment binds a name t
     x = x + 1   # now x is 6
 
 The type of a variable is not fixed: you may reassign it to a value of another type.""",
-            ),
-            (
-                "Conditional Statements",
-                "lecture",
-                "if, elif, else and comparisons.",
-                """Conditional Statements.
+                    now,
+                ),
+                (
+                    "Conditional Statements",
+                    "lecture",
+                    "if, elif, else and comparisons.",
+                    """Conditional Statements.
 
 Often a program must choose between several branches depending on a condition. Python uses
 the keywords if, elif and else:
@@ -105,91 +125,105 @@ the keywords if, elif and else:
         print("negative")
 
 The condition is any expression that evaluates to a boolean. Useful comparisons:
->, <, >=, <=, ==, !=. You may combine them with and, or, not.
+>, <, >=, <=, ==, !=. You may combine them with and, or, not. Remember that the body of a
+branch is indented by 4 spaces.""",
+                    now,
+                ),
+                (
+                    "Lab 1: Output",
+                    "practical",
+                    "First programs: printing text to the screen.",
+                    "",
+                    now,
+                ),
+                (
+                    "Lab 2: Arithmetic",
+                    "practical",
+                    "Reading numbers and performing arithmetic operations.",
+                    "",
+                    now,
+                ),
+                (
+                    "Lab 3: Conditions",
+                    "practical",
+                    "Branching: if, elif and else in practice.",
+                    "",
+                    now,
+                ),
+            ],
+        )
 
-Remember that the body of a branch is indented by 4 spaces.""",
-            ),
-            (
-                "Lab 1: Hello, World!",
-                "practical",
-                "Write and run your first program.",
-                """Statement.
+        lab_ids = {r["title"]: r["id"] for r in db.execute("SELECT id, title FROM works WHERE type='practical'").fetchall()}
 
-Write a program that prints the line:
+        db.executemany(
+            "INSERT INTO tasks (work_id, title, statement, input_format, output_format, created_by) VALUES (?, ?, ?, ?, ?, 1)",
+            [
+                (
+                    lab_ids["Lab 1: Output"],
+                    "Hello, World!",
+                    "Write a program that prints the classic greeting line.",
+                    "There is no input in this problem.",
+                    "Print a single line containing the text Hello, World!",
+                ),
+                (
+                    lab_ids["Lab 1: Output"],
+                    "Three Lines",
+                    "Write a program that prints three lines: the word FIRST, then the word SECOND, then the word THIRD. Each word on its own line.",
+                    "There is no input in this problem.",
+                    "Print three lines: FIRST, SECOND, THIRD, one word per line.",
+                ),
+                (
+                    lab_ids["Lab 2: Arithmetic"],
+                    "Sum of Two Numbers",
+                    "Given two integers, compute their sum.",
+                    "The input contains two integers a and b separated by a single space. Their absolute value is not greater than 10^9.",
+                    "Print a single integer: the sum a + b.",
+                ),
+                (
+                    lab_ids["Lab 2: Arithmetic"],
+                    "Product of Two Numbers",
+                    "Given two integers, compute their product.",
+                    "The input contains two integers a and b separated by a single space. Their absolute value is not greater than 10^9.",
+                    "Print a single integer: the product a * b.",
+                ),
+                (
+                    lab_ids["Lab 3: Conditions"],
+                    "Even or Odd",
+                    "Given an integer, determine whether it is even or odd.",
+                    "The input contains a single integer n. Its absolute value is not greater than 10^9.",
+                    "Print the word EVEN if the number is even, otherwise print the word ODD. Uppercase required.",
+                ),
+                (
+                    lab_ids["Lab 3: Conditions"],
+                    "Sign of an Integer",
+                    "Given an integer, determine its sign.",
+                    "The input contains a single integer n, different from 0. Its absolute value is not greater than 10^9.",
+                    "Print the word POSITIVE if the number is positive, otherwise print the word NEGATIVE. Uppercase required.",
+                ),
+            ],
+        )
 
-    Hello, World!
+        task_ids = {r["title"]: r["id"] for r in db.execute("SELECT id, title FROM tasks").fetchall()}
 
-Input format.
-
-There is no input in this problem.
-
-Output format.
-
-Print a single line containing the text Hello, World!.
-
-Example.
-
-Input:
-
-(no input)
-
-Output:
-
-    Hello, World!""",
-            ),
-            (
-                "Lab 2: Sum of Two Numbers",
-                "practical",
-                "Read two integers and print their sum.",
-                """Statement.
-
-Given two integers, print their sum.
-
-Input format.
-
-The first line contains two integers a and b, separated by a single space.
-The numbers are not greater than 10^9 in absolute value.
-
-Output format.
-
-Print a single integer: the sum a + b.
-
-Example.
-
-Input:
-    2 3
-
-Output:
-    5""",
-            ),
-            (
-                "Lab 3: Even or Odd",
-                "practical",
-                "Check the parity of a number.",
-                """Statement.
-
-Given an integer, determine whether it is even or odd.
-
-Input format.
-
-The only line contains a single integer n, where |n| <= 10^9.
-
-Output format.
-
-Print the word EVEN if the number is even, otherwise print ODD. Uppercase required.
-
-Example.
-
-Input:
-    42
-
-Output:
-    EVEN""",
-            ),
+        lab_tests = [
+            (task_ids["Hello, World!"], "", "Hello, World!"),
+            (task_ids["Three Lines"], "", "FIRST\nSECOND\nTHIRD"),
+            (task_ids["Sum of Two Numbers"], "2 3", "5"),
+            (task_ids["Sum of Two Numbers"], "1000 1", "1001"),
+            (task_ids["Sum of Two Numbers"], "-5 5", "0"),
+            (task_ids["Product of Two Numbers"], "2 3", "6"),
+            (task_ids["Product of Two Numbers"], "10 0", "0"),
+            (task_ids["Product of Two Numbers"], "-4 7", "-28"),
+            (task_ids["Even or Odd"], "42", "EVEN"),
+            (task_ids["Even or Odd"], "7", "ODD"),
+            (task_ids["Even or Odd"], "0", "EVEN"),
+            (task_ids["Sign of an Integer"], "5", "POSITIVE"),
+            (task_ids["Sign of an Integer"], "-9", "NEGATIVE"),
+            (task_ids["Sign of an Integer"], "123456", "POSITIVE"),
         ]
         db.executemany(
-            "INSERT INTO works (title, type, description, content, created_by, created_at) VALUES (?, ?, ?, ?, 1, ?)",
-            [(d[0], d[1], d[2], d[3], now) for d in seed_works],
+            "INSERT INTO tests (task_id, input_data, output_data) VALUES (?, ?, ?)",
+            lab_tests,
         )
 
     db.commit()
