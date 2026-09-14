@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Home — LMS3301{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Hello, {{ current_login }}!</h1>
+  <p class="meta">Role: <strong>{{ role_label }}</strong></p>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Sign In — LMS3301{% endblock %}
+{% block content %}
+<div class="card" style="max-width:400px; margin:60px auto;">
+  <h1>Sign in to your account</h1>
+  <form method="post">
+    <label for="login">Login</label>
+    <input type="text" id="login" name="login" placeholder="Enter your login" required>
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+    <button class="btn" type="submit" style="width:100%; margin-top:8px;">Sign in</button>
+  </form>
+</div>
+{% endblock %}
