@@ -132,11 +132,8 @@ def student_task(work_id, task_id):
         flash("Task not found")
         return redirect(url_for("student_cabinet"))
     tests = db.execute("SELECT * FROM tests WHERE task_id = ?", (task_id,)).fetchall()
-    tasks = db.execute("SELECT id, title FROM tasks WHERE work_id = ?", (work_id,)).fetchall()
-    task_ids = [t["id"] for t in tasks]
-    task_no = task_ids.index(task_id) + 1 if task_id in task_ids else None
     db.close()
-    return render_template("task_detail.html", work=work, task=task, tests=tests, tasks=tasks, task_no=task_no)
+    return render_template("task_detail.html", work=work, task=task, tests=tests)
 
 
 if __name__ == "__main__":
