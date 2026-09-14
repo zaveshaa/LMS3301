@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Sign In — LMS3301{% endblock %}
+{% block title %}Вход — LMS3301{% endblock %}
 {% block content %}
 <div class="card" style="max-width:400px; margin:48px auto; padding:36px;">
-  <h1>Sign in</h1>
+  <h1>Вход</h1>
+  <p class="meta" style="margin-bottom:24px;">Войдите, чтобы продолжить</p>
   <form method="post">
-    <label for="login">Login</label>
+    <label for="login">Логин</label>
     <input type="text" id="login" name="login" required>
-    <label for="password">Password</label>
+    <label for="password">Пароль</label>
     <input type="password" id="password" name="password" required>
-    <button class="btn" type="submit" style="width:100%; justify-content:center; margin-top:8px;">Sign in</button>
+    <button class="btn" type="submit" style="width:100%; justify-content:center; margin-top:6px;">Войти</button>
   </form>
 </div>
 {% endblock %}

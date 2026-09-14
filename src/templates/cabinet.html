@@ -1,16 +1,19 @@
 {% extends "base.html" %}
-{% block title %}My Works — LMS3301{% endblock %}
+{% block title %}Мои работы — LMS3301{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>My Works</h1>
-  <p class="meta" style="margin-bottom:20px;">Lectures and practical works of the course.</p>
+  <h1>Мои работы</h1>
+  <p class="meta">Лекции и практические работы курса.</p>
   {% for w in works %}
-  <a class="work-item" href="{{ url_for('student_work', work_id=w.id) }}">
-    <span class="type-badge {{ 'type-lecture' if w['type'] == 'lecture' else 'type-practical' }}">
-      {{ type_label[w['type']] }}
-    </span>
-    <div class="work-title">{{ w.title }}</div>
-    <div class="work-desc">{{ w.description }}</div>
+  <a class="work-item" href="{{ url_for('student_work', work_id=w.id) }}" style="margin-top:16px;">
+    <div class="work-body">
+      <span class="type-badge {{ 'type-lecture' if w['type'] == 'lecture' else 'type-practical' }}">
+        {{ type_label[w['type']] }}
+      </span>
+      <div class="work-title">{{ w.title }}</div>
+      <div class="work-desc">{{ w.description }}</div>
+    </div>
+    <span class="work-arrow">&rarr;</span>
   </a>
   {% endfor %}
 </div>

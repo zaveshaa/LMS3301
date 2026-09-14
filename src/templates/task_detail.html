@@ -2,15 +2,15 @@
 {% block title %}{{ task.title }} — LMS3301{% endblock %}
 {% block content %}
 <div class="card">
-  <p style="margin-bottom:18px;">
-    <a class="back-link" href="{{ url_for('student_work', work_id=work.id) }}">&larr; {{ work.title }}</a>
+  <p style="margin-bottom:16px;">
+    <a class="back-link" href="{{ url_for('student_work', work_id=work.id) }}">&larr; к работе</a>
   </p>
 
   <h1 class="page-title" style="font-size:1.3rem;">{{ task.title }}</h1>
-  <div class="task-text" style="margin-top:14px;">{{ task.statement }}</div>
+  <div class="task-statement">{{ task.statement }}</div>
 
-  <div class="section-label" style="margin-top:28px;">Примеры тестов</div>
-  <table class="tests-table">
+  <div class="section-label">Примеры тестов</div>
+  <table class="examples-table">
     <thead>
       <tr><th style="width:50%">Ввод</th><th style="width:50%">Вывод</th></tr>
     </thead>
@@ -26,7 +26,7 @@
 
   <div class="section-label">Ваше решение</div>
   <textarea class="code-editor" name="code" placeholder="# напишите свой код на Python" spellcheck="false"></textarea>
-  <div>
+  <div class="solution-actions">
     <button class="btn" type="button">Запустить тесты</button>
     <button class="btn-outline" type="button">Отправить на проверку</button>
   </div>

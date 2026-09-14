@@ -2,20 +2,19 @@
 {% block title %}{{ work.title }} — LMS3301{% endblock %}
 {% block content %}
 <div class="card">
-  <p style="margin-bottom:16px;"><a class="back-link" href="{{ url_for('student_cabinet') }}">&larr; Works</a></p>
+  <p style="margin-bottom:14px;"><a class="back-link" href="{{ url_for('student_cabinet') }}">&larr; Мои работы</a></p>
   <h1 class="page-title" style="font-size:1.3rem;">{{ work.title }}</h1>
-  <p class="meta" style="margin-top:6px;">
-    <span class="type-badge {{ 'type-lecture' if work['type'] == 'lecture' else 'type-practical' }}">{{ type_label[work['type']] }}</span>
-  </p>
 
   {% if work['type'] == 'lecture' %}
-  <div class="task-text" style="margin-top:22px;">{{ work.content }}</div>
+  <div class="task-statement">{{ work.content }}</div>
   {% else %}
-  <ul class="task-list" style="margin-top:18px;">
+  <p class="section-label">Задания</p>
+  <ul class="task-list">
     {% for t in tasks %}
     <li>
       <a class="task-link" href="{{ url_for('student_task', work_id=work.id, task_id=t.id) }}">
-        <span class="task-name">{{ loop.index }}. {{ t.title }}</span>
+        <span class="task-no">{{ loop.index }}</span>
+        <span class="task-name">{{ t.title }}</span>
       </a>
     </li>
     {% endfor %}

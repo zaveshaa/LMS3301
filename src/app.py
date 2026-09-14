@@ -12,7 +12,7 @@ app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 app.secret_key = "pytestlms-dev-secret-key"
 
 ROLE_LABELS = {"admin": "Преподаватель", "student": "Студент"}
-TYPE_LABELS = {"lecture": "Lecture", "practical": "Practical"}
+TYPE_LABELS = {"lecture": "Лекция", "practical": "Практика"}
 
 
 def get_user():
@@ -78,7 +78,7 @@ def login():
         if user and check_password_hash(user["password_hash"], password):
             session["user_id"] = user["id"]
             return redirect(url_for("home"))
-        flash("Invalid login or password")
+        flash("Неверный логин или пароль")
     return render_template("login.html")
 
 
@@ -114,7 +114,7 @@ def student_work(work_id):
     db = get_db()
     work = db.execute("SELECT * FROM works WHERE id = ?", (work_id,)).fetchone()
     if work is None:
-        flash("Work not found")
+        flash("Работа не найдена")
         return redirect(url_for("student_cabinet"))
     tasks = db.execute("SELECT * FROM tasks WHERE work_id = ?", (work_id,)).fetchall()
     db.close()
@@ -129,7 +129,7 @@ def student_task(work_id, task_id):
     work = db.execute("SELECT * FROM works WHERE id = ?", (work_id,)).fetchone()
     task = db.execute("SELECT * FROM tasks WHERE id = ? AND work_id = ?", (task_id, work_id)).fetchone()
     if work is None or task is None:
-        flash("Task not found")
+        flash("Задача не найдена")
         return redirect(url_for("student_cabinet"))
     tests = db.execute("SELECT * FROM tests WHERE task_id = ?", (task_id,)).fetchall()
     db.close()
