@@ -9,26 +9,26 @@
   <h1 class="page-title" style="font-size:1.3rem;">{{ task.title }}</h1>
   <div class="task-text" style="margin-top:14px;">{{ task.statement }}</div>
 
-  <div class="section-label" style="margin-top:28px;">Example tests</div>
-  <table class="tests-table example-table">
+  <div class="section-label" style="margin-top:28px;">Примеры тестов</div>
+  <table class="tests-table">
     <thead>
-      <tr><th>Input</th><th>Output</th></tr>
+      <tr><th style="width:50%">Ввод</th><th style="width:50%">Вывод</th></tr>
     </thead>
     <tbody>
       {% for tc in tests[:2] %}
       <tr>
-        <td class="mono">{% if tc['input_data'] %}{{ tc['input_data'] }}{% else %}(no input){% endif %}</td>
+        <td class="mono">{% if tc['input_data'] %}{{ tc['input_data'] }}{% else %}нет входных данных{% endif %}</td>
         <td class="mono">{{ tc['output_data'] }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 
-  <div class="section-label">Your solution</div>
-  <textarea class="code-editor" name="code" placeholder="# write your Python code here" spellcheck="false"></textarea>
+  <div class="section-label">Ваше решение</div>
+  <textarea class="code-editor" name="code" placeholder="# напишите свой код на Python" spellcheck="false"></textarea>
   <div>
-    <button class="btn" type="button">Run tests</button>
-    <button class="btn-outline" type="button">Submit for review</button>
+    <button class="btn" type="button">Запустить тесты</button>
+    <button class="btn-outline" type="button">Отправить на проверку</button>
   </div>
 </div>
 {% endblock %}

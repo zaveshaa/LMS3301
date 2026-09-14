@@ -72,81 +72,83 @@ def init_db():
             "INSERT INTO works (title, type, description, content, created_by, created_at) VALUES (?, ?, ?, ?, 1, ?)",
             [
                 (
-                    "Introduction to Programming",
+                    "Введение в программирование",
                     "lecture",
-                    "The very first lecture: what a program is, why Python.",
-                    """Course: Programming Fundamentals.
+                    "Первая лекция: что такое программа и зачем Python.",
+                    """Курс: Основы программирования.
 
-A program is a sequence of instructions that a computer executes. We write programs in a
-programming language such as Python, and the computer translates them into actions.
+Программа — это последовательность инструкций, которые выполняет компьютер. Мы пишем
+программы на языке программирования, например на Python, а компьютер переводит их
+в действия.
 
-In this course you will learn how to think like a programmer: to break a problem into steps
-and express each step precisely. Every lecture is followed by a practical work. Complete
-every task to fix the material.""",
+В этом курсе вы научитесь мыслить как программист: разбивать задачу на шаги и чётко
+формулировать каждый шаг. После каждой лекции идёт практическая работа. Выполняйте
+все задачи, чтобы закрепить материал.""",
                     now,
                 ),
                 (
-                    "Data Types and Variables",
+                    "Типы данных и переменные",
                     "lecture",
-                    "Integers, floating point numbers, strings and how to store values.",
-                    """Data Types and Variables.
+                    "Целые и вещественные числа, строки и хранение значений.",
+                    """Типы данных и переменные.
 
-Any value we work with has a type: the kind of data it is and what operations are allowed
-on it. The basic types in Python:
+Любое значение, с которым мы работаем, имеет тип: вид данных и список допустимых
+операций. Основные типы в Python:
 
-    int     - integer numbers: 5, -3, 0
-    float   - real numbers: 3.14, -1.0, 2.5
-    str     - text: "hello", "world"
-    bool    - logical value: True, False
+    int     - целые числа: 5, -3, 0
+    float   - вещественные числа: 3.14, -1.0, 2.5
+    str     - текст: "привет", "мир"
+    bool    - логическое значение: True, False
 
-A variable is a named container that stores one value. Assignment binds a name to a value:
+Переменная — это именованный контейнер, который хранит значение. Присваивание
+связывает имя со значением:
 
     x = 5
-    name = "Ana"
-    x = x + 1   # now x is 6
+    name = "Аня"
+    x = x + 1   # теперь x равно 6
 
-The type of a variable is not fixed: you may reassign it to a value of another type.""",
+Тип переменной не фиксирован: ей можно присвоить значение другого типа.""",
                     now,
                 ),
                 (
-                    "Conditional Statements",
+                    "Условные операторы",
                     "lecture",
-                    "if, elif, else and comparisons.",
-                    """Conditional Statements.
+                    "if, elif, else и операции сравнения.",
+                    """Условные операторы.
 
-Often a program must choose between several branches depending on a condition. Python uses
-the keywords if, elif and else:
+Часто программа должна выбрать одну из нескольких ветвей в зависимости от условия.
+В Python используются ключевые слова if, elif и else:
 
     if x > 0:
-        print("positive")
+        print("положительное")
     elif x == 0:
-        print("zero")
+        print("ноль")
     else:
-        print("negative")
+        print("отрицательное")
 
-The condition is any expression that evaluates to a boolean. Useful comparisons:
->, <, >=, <=, ==, !=. You may combine them with and, or, not. Remember that the body of a
-branch is indented by 4 spaces.""",
+Условие — это любое выражение, принимающее логическое значение. Полезные операции
+сравнения: >, <, >=, <=, ==, !=. Их можно объединять с помощью and, or, not.
+Помните, что тело ветки пишется с отступом в 4 пробела.""",
                     now,
                 ),
                 (
-                    "Lab 1: Output",
+                    "Лабораторная 1: Вывод",
                     "practical",
-                    "First programs: printing text to the screen.",
+                    "Первые программы: вывод текста на экран.",
                     "",
                     now,
                 ),
                 (
-                    "Lab 2: Arithmetic",
+                    "Лабораторная 2: Арифметика",
                     "practical",
-                    "Reading numbers and performing arithmetic operations.",
+                    "Ввод чисел и арифметические операции.",
                     "",
                     now,
                 ),
                 (
-                    "Lab 3: Conditions",
+                    "Лабораторная 3: Условия",
                     "practical",
-                    "Branching: if, elif and else in practice.",
+                    "Ветвление: if, elif и else на практике.",
                     "",
                     now,
                 ),
@@ -159,46 +161,46 @@ branch is indented by 4 spaces.""",
             "INSERT INTO tasks (work_id, title, statement, input_format, output_format, created_by) VALUES (?, ?, ?, ?, ?, 1)",
             [
                 (
-                    lab_ids["Lab 1: Output"],
-                    "Hello, World!",
-                    "Write a program that prints the classic greeting line.",
-                    "There is no input in this problem.",
-                    "Print a single line containing the text Hello, World!",
+                    lab_ids["Лабораторная 1: Вывод"],
+                    "Привет, мир!",
+                    "Напишите программу, которая выводит классическую строку приветствия.",
+                    "В этой задаче нет входных данных.",
+                    "Выведите одну строку: Hello, World!",
                 ),
                 (
-                    lab_ids["Lab 1: Output"],
-                    "Three Lines",
-                    "Write a program that prints three lines: the word FIRST, then the word SECOND, then the word THIRD. Each word on its own line.",
-                    "There is no input in this problem.",
-                    "Print three lines: FIRST, SECOND, THIRD, one word per line.",
+                    lab_ids["Лабораторная 1: Вывод"],
+                    "Три строки",
+                    "Напишите программу, которая выводит три строки: слово ПЕРВЫЙ, затем слово ВТОРОЙ, затем слово ТРЕТИЙ. Каждое слово — на отдельной строке.",
+                    "В этой задаче нет входных данных.",
+                    "Выведите три строки: ПЕРВЫЙ, ВТОРОЙ и ТРЕТИЙ, по одному слову в каждой строке.",
                 ),
                 (
-                    lab_ids["Lab 2: Arithmetic"],
-                    "Sum of Two Numbers",
-                    "Given two integers, compute their sum.",
-                    "The input contains two integers a and b separated by a single space. Their absolute value is not greater than 10^9.",
-                    "Print a single integer: the sum a + b.",
+                    lab_ids["Лабораторная 2: Арифметика"],
+                    "Сумма двух чисел",
+                    "Даны два целых числа, вычислите их сумму.",
+                    "Входные данные содержат два целых числа a и b, разделённых одним пробелом. Их абсолютные значения не превышают 10^9.",
+                    "Выведите одно целое число: сумму a + b.",
                 ),
                 (
-                    lab_ids["Lab 2: Arithmetic"],
-                    "Product of Two Numbers",
-                    "Given two integers, compute their product.",
-                    "The input contains two integers a and b separated by a single space. Their absolute value is not greater than 10^9.",
-                    "Print a single integer: the product a * b.",
+                    lab_ids["Лабораторная 2: Арифметика"],
+                    "Произведение двух чисел",
+                    "Даны два целых числа, вычислите их произведение.",
+                    "Входные данные содержат два целых числа a и b, разделённых одним пробелом. Их абсолютные значения не превышают 10^9.",
+                    "Выведите одно целое число: произведение a * b.",
                 ),
                 (
-                    lab_ids["Lab 3: Conditions"],
-                    "Even or Odd",
-                    "Given an integer, determine whether it is even or odd.",
-                    "The input contains a single integer n. Its absolute value is not greater than 10^9.",
-                    "Print the word EVEN if the number is even, otherwise print the word ODD. Uppercase required.",
+                    lab_ids["Лабораторная 3: Условия"],
+                    "Чётное или нечётное",
+                    "Дано целое число, определите, является ли оно чётным или нечётным.",
+                    "Входные данные содержат одно целое число n. Его абсолютное значение не превышает 10^9.",
+                    "Выведите слово ЧЁТНОЕ, если число чётное, иначе выведите слово НЕЧЁТНОЕ.",
                 ),
                 (
-                    lab_ids["Lab 3: Conditions"],
-                    "Sign of an Integer",
-                    "Given an integer, determine its sign.",
-                    "The input contains a single integer n, different from 0. Its absolute value is not greater than 10^9.",
-                    "Print the word POSITIVE if the number is positive, otherwise print the word NEGATIVE. Uppercase required.",
+                    lab_ids["Лабораторная 3: Условия"],
+                    "Знак числа",
+                    "Дано целое число, определите его знак.",
+                    "Входные данные содержат одно целое число n, не равное нулю. Его абсолютное значение не превышает 10^9.",
+                    "Выведите слово ПОЛОЖИТЕЛЬНОЕ, если число положительное, иначе выведите слово ОТРИЦАТЕЛЬНОЕ.",
                 ),
             ],
         )
@@ -206,20 +208,20 @@ branch is indented by 4 spaces.""",
         task_ids = {r["title"]: r["id"] for r in db.execute("SELECT id, title FROM tasks").fetchall()}
 
         lab_tests = [
-            (task_ids["Hello, World!"], "", "Hello, World!"),
-            (task_ids["Three Lines"], "", "FIRST\nSECOND\nTHIRD"),
-            (task_ids["Sum of Two Numbers"], "2 3", "5"),
-            (task_ids["Sum of Two Numbers"], "1000 1", "1001"),
-            (task_ids["Sum of Two Numbers"], "-5 5", "0"),
-            (task_ids["Product of Two Numbers"], "2 3", "6"),
-            (task_ids["Product of Two Numbers"], "10 0", "0"),
-            (task_ids["Product of Two Numbers"], "-4 7", "-28"),
-            (task_ids["Even or Odd"], "42", "EVEN"),
-            (task_ids["Even or Odd"], "7", "ODD"),
-            (task_ids["Even or Odd"], "0", "EVEN"),
-            (task_ids["Sign of an Integer"], "5", "POSITIVE"),
-            (task_ids["Sign of an Integer"], "-9", "NEGATIVE"),
-            (task_ids["Sign of an Integer"], "123456", "POSITIVE"),
+            (task_ids["Привет, мир!"], "", "Hello, World!"),
+            (task_ids["Три строки"], "", "ПЕРВЫЙ\nВТОРОЙ\nТРЕТИЙ"),
+            (task_ids["Сумма двух чисел"], "2 3", "5"),
+            (task_ids["Сумма двух чисел"], "1000 1", "1001"),
+            (task_ids["Сумма двух чисел"], "-5 5", "0"),
+            (task_ids["Произведение двух чисел"], "2 3", "6"),
+            (task_ids["Произведение двух чисел"], "10 0", "0"),
+            (task_ids["Произведение двух чисел"], "-4 7", "-28"),
+            (task_ids["Чётное или нечётное"], "42", "ЧЁТНОЕ"),
+            (task_ids["Чётное или нечётное"], "7", "НЕЧЁТНОЕ"),
+            (task_ids["Чётное или нечётное"], "0", "ЧЁТНОЕ"),
+            (task_ids["Знак числа"], "5", "ПОЛОЖИТЕЛЬНОЕ"),
+            (task_ids["Знак числа"], "-9", "ОТРИЦАТЕЛЬНОЕ"),
+            (task_ids["Знак числа"], "123456", "ПОЛОЖИТЕЛЬНОЕ"),
         ]
         db.executemany(
             "INSERT INTO tests (task_id, input_data, output_data) VALUES (?, ?, ?)",
