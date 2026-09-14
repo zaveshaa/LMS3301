@@ -4,14 +4,18 @@
 <div class="card">
   <h1>Мои работы</h1>
   <p class="meta">Лекции и практические работы курса.</p>
-  {% for w in works %}
-  <a class="work-item" href="{{ url_for('student_work', work_id=w.id) }}" style="margin-top:16px;">
-    <span class="type-badge {{ 'type-lecture' if w['type'] == 'lecture' else 'type-practical' }}">
-      {{ type_label[w['type']] }}
-    </span>
-    <div class="work-title">{{ w.title }}</div>
-    <div class="work-desc">{{ w.description }}</div>
-  </a>
-  {% endfor %}
+  {% if works %}
+    {% for w in works %}
+    <a class="work-item" href="{{ url_for('student_work', work_id=w.id) }}" style="margin-top:16px;">
+      <span class="type-badge {{ 'type-lecture' if w['type'] == 'lecture' else 'type-practical' }}">
+        {{ type_label[w['type']] }}
+      </span>
+      <div class="work-title">{{ w.title }}</div>
+      <div class="work-desc">{{ w.description }}</div>
+    </a>
+    {% endfor %}
+  {% else %}
+    <p style="margin-top:20px; color:#8a93a8;">Работ пока нет.</p>
+  {% endif %}
 </div>
 {% endblock %}
