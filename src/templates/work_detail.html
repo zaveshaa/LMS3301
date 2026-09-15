@@ -1,22 +1,40 @@
 {% extends "base.html" %}
 {% block title %}{{ work.title }} — LMS3301{% endblock %}
 {% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('student_cabinet') }}">Мои работы</a>
+  <span class="sep">/</span>
+  <span>{{ work.title }}</span>
+</div>
+
 <div class="card">
-  <p style="margin-bottom:14px;"><a class="back-link" href="{{ url_for('student_cabinet') }}">Мои работы</a></p>
-  <h1 class="page-title" style="font-size:1.3rem;">{{ work.title }}</h1>
+  <div class="page-head">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span class="type-badge {{ 'type-lecture' if work['type'] == 'lecture' else 'type-practical' }}">
+        {{ type_label[work['type']] }}
+      </span>
+      <h1 style="margin:0;">{{ work.title }}</h1>
+    </div>
+    {% if work.description %}<p class="meta" style="margin-top:10px;">{{ work.description }}</p>{% endif %}
+  </div>
 
   {% if work['type'] == 'lecture' %}
-  <div class="statement-block">{{ work.content }}</div>
-  {% else %}
+  <div class="statement-block">{{ work.content if work.content else 'Материалы лекции ещё не добавлены.' }}</div>
+
+  {% elif tasks %}
   <ul class="task-list">
     {% for t in tasks %}
     <li>
-      <a class="task-link" href="{{ url_for('student_task', work_id=work.id, task_id=t.id) }}">
-        <span class="task-name">{{ loop.index }}. {{ t.title }}</span>
+      <a class="task-item" href="{{ url_for('student_task', work_id=work.id, task_id=t.id) }}">
+        <span class="task-num">{{ loop.index }}</span>
+        <span class="task-name">{{ t.title }}</span>
       </a>
     </li>
     {% endfor %}
   </ul>
+
+  {% else %}
+  <div class="empty">Задач пока нет.</div>
   {% endif %}
 </div>
 {% endblock %}

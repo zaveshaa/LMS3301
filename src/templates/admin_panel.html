@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% block title %}Панель преподавателя — LMS3301{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="panel-top">
+    <div>
+      <h1>Панель преподавателя</h1>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="works" onclick="showTab('works')">Работы</button>
+      <button class="tab" data-tab="students" onclick="showTab('students')">Студенты</button>
+    </div>
+  </div>
+  <div class="stats-mini">
+    <span>Студентов — <b>{{ student_count }}</b></span>
+    <span>Групп — <b>{{ group_count }}</b></span>
+    <span>Работ — <b>{{ work_count }}</b></span>
+    <span>Задач — <b>{{ task_count }}</b></span>
+  </div>
+</div>
+
+<!-- =============================================== РАБОТЫ -->
+<section id="tab-works" class="panel-section">
+  <div class="card">
+    <div class="panel-top">
+      <h1>Работы</h1>
+      <button class="btn" type="button" onclick="toggleNewWork()">Новая работа</button>
+    </div>
+    <form id="new-work-form" method="post" action="{{ url_for('admin_work_new') }}" hidden>
+      <div class="divider" style="margin:16px 0 20px;"></div>
+      <div class="row2">
+        <div><label>Название</label><input type="text" name="title" required></div>
+        <div style="flex:0 0 150px;">
+          <label>Тип</label>
+          <select name="type">
+            <option value="practical" selected>Практика</option>
+            <option value="lecture">Лекция</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Описание</label><input type="text" name="description"></div>
+      <div class="field"><label>Содержание</label><textarea name="content" rows="4"></textarea></div>
+      <div class="btn-row">
+        <button class="btn" type="submit">Создать работу</button>
+        <button class="btn btn-outline" type="button" onclick="toggleNewWork()">Отмена</button>
+      </div>
+    </form>
+    <div class="page-tools" style="margin-top:18px;">
+      <input id="work-filter" type="search">
+    </div>
+  </div>
+
+  {% for item in works %}
+  {% set w = item.work %}
+  <div class="work-card" id="work-{{ w.id }}" style="margin-bottom:14px;">
+    <div class="wc-head" onclick="toggleWork({{ w.id }})">
+      <span class="type-badge {{ 'type-lecture' if w['type'] == 'lecture' else 'type-practical' }}">{{ type_label[w['type']] }}</span>
+      <span class="wc-title">{{ w.title }}</span>
+      <span class="wc-meta">
+        <span class="count-badge">задач: {{ item.tasks|length }}</span>
+        {% if item.groups %}
+          {% for g in item.groups %}<span class="group-chip">{{ g }}</span>{% endfor %}
+        {% else %}
+          <span class="group-chip">все группы</span>
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="wc-body" id="work-body-{{ w.id }}" hidden>
+      <div class="row2">
+        <div style="flex:1.4;"><label>Название</label><input type="text" name="title" value="{{ w.title }}" form="work-edit-{{ w.id }}" required></div>
+        <div style="flex:0 0 150px;">
+          <label>Тип</label>
+          <select name="type" form="work-edit-{{ w.id }}">
+            <option value="practical" {% if w['type'] == 'practical' %}selected{% endif %}>Практика</option>
+            <option value="lecture" {% if w['type'] == 'lecture' %}selected{% endif %}>Лекция</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Описание</label><input type="text" name="description" value="{{ w.description }}" form="work-edit-{{ w.id }}"></div>
+      <div class="field"><label>Содержание</label><textarea name="content" rows="4" form="work-edit-{{ w.id }}">{{ w.content }}</textarea></div>
+      <div class="btn-row">
+        <form id="work-edit-{{ w.id }}" method="post" action="{{ url_for('admin_work_detail', work_id=w.id) }}">
+          <input type="hidden" name="action" value="edit">
+          <button class="btn" type="submit">Сохранить изменения</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_work_delete', work_id=w.id) }}"
+              onsubmit="return confirm('Удалить работу «{{ w.title }}» вместе со всеми задачами?');">
+          <button class="btn btn-danger" type="submit">Удалить работу</button>
+        </form>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 style="font-size:.95rem;">Кому видна работа</h2>
+      <form method="post" action="{{ url_for('admin_work_detail', work_id=w.id) }}">
+        <input type="hidden" name="action" value="groups">
+        <div class="groups-box">
+          {% if groups %}
+            {% for g in groups %}
+            <label class="g-check"><input type="checkbox" name="groups" value="{{ g }}" {% if g in item.groups %}checked{% endif %}> {{ g }}</label>
+            {% endfor %}
+          {% endif %}
+        </div>
+        <button class="btn btn-outline" type="submit">Сохранить группы</button>
+      </form>
+
+      <div class="divider"></div>
+
+      {% if w['type'] == 'practical' %}
+      <h2 style="font-size:.95rem;">Задачи</h2>
+      <div class="new-task-box" id="new-task-box-{{ w.id }}" hidden>
+        <form id="new-task-{{ w.id }}" method="post" action="{{ url_for('admin_task_new', work_id=w.id) }}">
+          <div class="field"><label>Название задачи</label><input type="text" name="title" required></div>
+          <div class="field"><label>Условие</label><textarea name="statement" rows="2"></textarea></div>
+          <div class="row2">
+            <div><label>Формат ввода</label><textarea name="input_format" rows="2"></textarea></div>
+            <div><label>Формат вывода</label><textarea name="output_format" rows="2"></textarea></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" type="submit">Добавить задачу</button>
+            <button class="btn btn-outline" type="button" onclick="toggleNewTask({{ w.id }})">Отмена</button>
+          </div>
+        </form>
+      </div>
+      <button class="btn btn-outline btn-sm" type="button" onclick="toggleNewTask({{ w.id }})" style="margin-bottom:14px;">+ Добавить задачу</button>
+
+      {% for tt in item.tasks %}
+      {% set t = tt.task %}
+      <div class="task-card" id="task-{{ t.id }}">
+        <div class="tc-head">
+          <span class="tc-name">
+            <span class="count-badge" style="margin-right:8px;">{{ loop.index }}</span>{{ t.title }}
+          </span>
+          <span class="tc-links">
+            <button class="link-act" type="button" onclick="toggleTests({{ t.id }})">Тесты ({{ tt.tests|length }})</button>
+            <button class="link-act" type="button" onclick="toggleTaskEdit({{ t.id }})">Изменить</button>
+            <form method="post" action="{{ url_for('admin_task_delete', task_id=t.id) }}"
+                  onsubmit="return confirm('Удалить задачу «{{ t.title }}» и все её тесты?');" style="margin:0;">
+              <button class="link-act danger" type="submit">Удалить</button>
+            </form>
+          </span>
+        </div>
+        <div class="tc-body">
+          <div class="tc-io">
+            <div class="io-col"><div class="lbl">Условие</div><pre class="pre-view">{{ t.statement }}</pre></div>
+            <div class="io-col">
+              <div class="lbl">Форматы</div>
+              <pre class="pre-view">Ввод: {{ t.input_format }}
+Вывод: {{ t.output_format }}</pre>
+            </div>
+          </div>
+
+          <div id="task-edit-{{ t.id }}" hidden>
+            <div class="divider" style="margin:0 0 14px;"></div>
+            <form method="post" action="{{ url_for('admin_task_edit', task_id=t.id) }}">
+              <div class="field"><label>Название</label><input type="text" name="title" value="{{ t.title }}" required></div>
+              <div class="field"><label>Условие</label><textarea name="statement" rows="3">{{ t.statement }}</textarea></div>
+              <div class="row2">
+                <div><label>Формат ввода</label><textarea name="input_format" rows="2">{{ t.input_format }}</textarea></div>
+                <div><label>Формат вывода</label><textarea name="output_format" rows="2">{{ t.output_format }}</textarea></div>
+              </div>
+              <div class="btn-row"><button class="btn btn-outline" type="submit">Сохранить задачу</button></div>
+            </form>
+          </div>
+
+          <div id="task-tests-{{ t.id }}" hidden>
+            <div class="divider" style="margin:0 0 14px;"></div>
+            <div class="row2" style="align-items:flex-end;">
+              <div><label>Ввод</label><textarea name="input_data" rows="2" form="test-new-{{ t.id }}"></textarea></div>
+              <div><label>Вывод</label><textarea name="output_data" rows="2" form="test-new-{{ t.id }}"></textarea></div>
+              <div style="flex:0 0 auto; padding-bottom:4px;">
+                <form id="test-new-{{ t.id }}" method="post" action="{{ url_for('admin_test_new', task_id=t.id) }}">
+                  <button class="btn btn-outline btn-sm" type="submit">Добавить тест</button>
+                </form>
+              </div>
+            </div>
+
+            <details class="bulk-box">
+              <summary>Добавить несколько тестов сразу</summary>
+              <form method="post" action="{{ url_for('admin_test_bulk', task_id=t.id) }}">
+                <textarea name="bulk_data" rows="8"></textarea>
+                <div class="btn-row"><button class="btn btn-outline btn-sm" type="submit">Добавить тесты</button></div>
+              </form>
+            </details>
+
+            {% for t2 in tt.tests %}
+            <div class="test-card">
+              <div class="test-head">
+                <span class="test-name">ТЕСТ {{ loop.index }}</span>
+                <form method="post" action="{{ url_for('admin_test_delete', test_id=t2.id) }}"
+                      onsubmit="return confirm('Удалить этот тест?');" style="margin:0;">
+                  <button class="link-act danger" type="submit">Удалить</button>
+                </form>
+              </div>
+              <div class="test-io">
+                <div class="io-col"><div class="lbl">Ввод</div><pre>{{ t2.input_data if t2.input_data else '(нет ввода)' }}</pre></div>
+                <div class="io-col"><div class="lbl">Вывод</div><pre>{{ t2.output_data }}</pre></div>
+              </div>
+              <details class="test-edit">
+                <summary class="link-act" style="font-size:.8rem;">Редактировать тест</summary>
+                <div class="edit-body">
+                  <form method="post" action="{{ url_for('admin_test_edit', test_id=t2.id) }}">
+                    <div class="field" style="margin-bottom:8px;"><label>Ввод</label><textarea name="input_data" rows="2">{{ t2.input_data }}</textarea></div>
+                    <div class="field" style="margin-bottom:10px;"><label>Вывод</label><textarea name="output_data" rows="2">{{ t2.output_data }}</textarea></div>
+                    <button class="btn btn-outline btn-sm" type="submit">Сохранить</button>
+                  </form>
+                </div>
+              </details>
+            </div>
+            {% else %}
+            <div style="margin-top:12px;"></div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% else %}
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="empty">Работ пока нет.</div>
+  {% endfor %}
+</section>
+
+<!-- =============================================== СТУДЕНТЫ -->
+<section id="tab-students" class="panel-section" hidden>
+  <div class="card">
+    <div class="panel-top">
+      <h1>Студенты</h1>
+      <button class="btn" type="button" onclick="toggleNewStudent()">Добавить студента</button>
+    </div>
+    <form id="new-student-form" method="post" action="{{ url_for('admin_student_new') }}" hidden>
+      <div class="divider" style="margin:16px 0 20px;"></div>
+      <div class="row2">
+        <div><label>Логин</label><input type="text" name="login" required></div>
+        <div style="flex:1.4;"><label>ФИО</label><input type="text" name="full_name"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" type="submit">Создать студента</button>
+        <button class="btn btn-outline" type="button" onclick="toggleNewStudent()">Отмена</button>
+      </div>
+    </form>
+  </div>
+
+  {% for group, students in student_groups.items() %}
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <h2 style="margin:0;">Группа {{ group }}</h2>
+      <span class="count-badge">{{ students|length }} чел.</span>
+    </div>
+    <table class="admin-table">
+      <tr><th style="width:34%;">ФИО</th><th>Логин</th><th style="width:22%;">Пароль</th><th></th></tr>
+      {% for s in students %}
+      <tr>
+        <td>{{ s.full_name or '—' }}</td>
+        <td class="mono-cell">{{ s.login }}</td>
+        <td class="mono-cell">{{ s.password_show }}</td>
+        <td style="white-space:nowrap; text-align:right;">
+          <button class="link-act" type="button" onclick="toggleStudentEdit({{ s.id }})">Изменить</button>
+          <form method="post" action="{{ url_for('admin_student_reset', user_id=s.id) }}" style="display:inline;"
+                onsubmit="return confirm('Сбросить пароль студента {{ s.login }}?');">
+            <button class="link-act" type="submit" style="margin-left:12px;">Сброс пароля</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_student_delete', user_id=s.id) }}" style="display:inline;"
+                onsubmit="return confirm('Удалить студента {{ s.login }}?');">
+            <button class="link-act danger" type="submit" style="margin-left:12px;">Удалить</button>
+          </form>
+        </td>
+      </tr>
+      <tr id="student-edit-{{ s.id }}" hidden>
+        <td colspan="4">
+          <form method="post" action="{{ url_for('admin_student_edit', user_id=s.id) }}">
+            <div class="row2">
+              <div><label>Логин</label><input type="text" name="login" value="{{ s.login }}"></div>
+              <div style="flex:1.4;"><label>ФИО</label><input type="text" name="full_name" value="{{ s.full_name }}"></div>
+              <div><label>Текущий пароль</label><input type="text" value="{{ s.password_show }}" readonly></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-outline" type="submit">Сохранить</button>
+              <button class="btn btn-outline" type="button" onclick="toggleStudentEdit({{ s.id }})">Отмена</button>
+            </div>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">Студентов пока нет.</div>
+  {% endfor %}
+</section>
+
+<style>
+  .new-task-box { border: 1px dashed #c3c9d6; background: #fbfcff; padding: 16px; margin-bottom: 14px; }
+</style>
+
+<script>
+function showTab(name) {
+  document.getElementById('tab-works').hidden = name !== 'works';
+  document.getElementById('tab-students').hidden = name !== 'students';
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.classList.toggle('active', t.dataset.tab === name);
+  });
+}
+function toggleNewWork() { var el = document.getElementById('new-work-form'); el.hidden = !el.hidden; }
+function toggleNewStudent() { var el = document.getElementById('new-student-form'); el.hidden = !el.hidden; }
+function toggleNewTask(id) { var el = document.getElementById('new-task-box-' + id); if (el) el.hidden = !el.hidden; }
+function toggleWork(id) {
+  var el = document.getElementById('work-body-' + id);
+  if (el) el.hidden = !el.hidden;
+}
+function toggleTaskEdit(id) {
+  var el = document.getElementById('task-edit-' + id);
+  if (el) el.hidden = !el.hidden;
+}
+function toggleTests(id) {
+  var el = document.getElementById('task-tests-' + id);
+  if (el) el.hidden = !el.hidden;
+}
+function toggleStudentEdit(id) {
+  var el = document.getElementById('student-edit-' + id);
+  if (el) el.hidden = !el.hidden;
+}
+var workFilter = document.getElementById('work-filter');
+if (workFilter) workFilter.addEventListener('input', function () {
+  var q = workFilter.value.trim().toLowerCase();
+  document.querySelectorAll('.work-card').forEach(function (card) {
+    var title = card.querySelector('.wc-title').textContent.toLowerCase();
+    card.style.display = (!q || title.indexOf(q) !== -1) ? '' : 'none';
+  });
+});
+function openHash() {
+  var m = location.hash.match(/^#work-(\d+)(?:task-(\d+))?/);
+  if (m) {
+    var w = document.getElementById('work-body-' + m[1]);
+    if (w) w.hidden = false;
+    if (m[2]) {
+      var tests = document.getElementById('task-tests-' + m[2]);
+      if (tests) tests.hidden = false;
+    }
+    setTimeout(function () {
+      var head = document.getElementById('work-' + m[1]);
+      if (head) head.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }, 50);
+  } else if (location.hash === '#students') {
+    showTab('students');
+  }
+}
+document.addEventListener('DOMContentLoaded', openHash);
+window.addEventListener('hashchange', openHash);
+</script>
+{% endblock %}

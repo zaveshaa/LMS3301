@@ -1,36 +1,89 @@
 {% extends "base.html" %}
 {% block title %}{{ task.title }} — LMS3301{% endblock %}
 {% block content %}
-<div class="card">
-  <p style="margin-bottom:16px;">
-    <a class="back-link" href="{{ url_for('student_work', work_id=work.id) }}">к работе</a>
-  </p>
+<div class="breadcrumb">
+  <a href="{{ url_for('student_cabinet') }}">Мои работы</a>
+  <span class="sep">/</span>
+  <a href="{{ url_for('student_work', work_id=work.id) }}">{{ work.title }}</a>
+  <span class="sep">/</span>
+  <span>{{ task.title }}</span>
+</div>
 
-  <h1 class="page-title" style="font-size:1.3rem;">{{ task.title }}</h1>
+<div class="task-layout">
+  <div class="info-col">
+    <div class="card">
+      <div class="statement-block">{{ task.statement or 'Условие ещё не добавлено.' }}</div>
+    </div>
 
-  <div class="section-label">Условие</div>
-  <div class="statement-block">{{ task.statement }}</div>
+    {% if task.input_format or task.output_format %}
+    <div class="card">
+      <div class="cf-head">Input</div>
+      <div class="cf-text">{{ task.input_format or '—' }}</div>
+      <div class="cf-head" style="margin-top:16px;">Output</div>
+      <div class="cf-text">{{ task.output_format or '—' }}</div>
+    </div>
+    {% endif %}
 
-  <div class="section-label">Примеры тестов</div>
-  <table class="examples-table">
-    <thead>
-      <tr><th style="width:50%">Ввод</th><th style="width:50%">Вывод</th></tr>
-    </thead>
-    <tbody>
+    {% if tests %}
+    <div class="card">
+      <h2>Примеры</h2>
       {% for tc in tests[:2] %}
-      <tr>
-        <td class="mono">{% if tc['input_data'] %}{{ tc['input_data'] }}{% else %}нет входных данных{% endif %}</td>
-        <td class="mono">{{ tc['output_data'] }}</td>
-      </tr>
+      <div class="cf-example-title">Пример {{ loop.index }}</div>
+      <div class="cf-head">Input</div>
+      <pre class="cf-code">{{ tc.input_data if tc.input_data else 'нет входных данных' }}</pre>
+      <div class="cf-head">Output</div>
+      <pre class="cf-code">{{ tc.output_data }}</pre>
       {% endfor %}
-    </tbody>
-  </table>
+    </div>
+    {% endif %}
+  </div>
 
-  <div class="section-label">Ваше решение</div>
-  <textarea class="code-editor" name="code" placeholder="# напишите свой код на Python" spellcheck="false"></textarea>
-  <div class="solution-actions">
-    <button class="btn" type="button">Запустить тесты</button>
-    <button class="btn-outline" type="button">Отправить на проверку</button>
+  <div class="solve-col">
+    <div class="card">
+      <h2>Ваше решение</h2>
+      {% if submission %}
+      <div class="submit-status">
+        <span class="status-badge status-{{ submission.status }}">{{ status_label[submission.status] }}</span>
+        <span>Попытка №{{ attempt_count }} · {{ submission.created_at }}</span>
+      </div>
+      {% endif %}
+      <form method="post" action="{{ url_for('student_submit', work_id=work.id, task_id=task.id) }}"
+            onsubmit="return confirm('Отправить решение на проверку?');">
+        <textarea class="code-editor" id="code" name="code" spellcheck="false">{{ submission.code if submission else '' }}</textarea>
+        <div class="solution-actions">
+          <button type="submit" class="btn">Отправить на проверку</button>
+          <button class="btn btn-outline" id="clear-btn" type="button">Очистить</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
+
+<script>
+(function () {
+  var ta = document.getElementById('code');
+  var key = 'lms_draft_{{ task.id }}';
+  var initial = null;
+  try { initial = localStorage.getItem(key); } catch (e) {}
+  if (initial) ta.value = initial;
+
+  var save = function () { try { localStorage.setItem(key, ta.value); } catch (e) {} };
+  ta.addEventListener('input', save);
+
+  ta.addEventListener('keydown', function (e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      var s = ta.selectionStart, e2 = ta.selectionEnd;
+      ta.value = ta.value.slice(0, s) + '  ' + ta.value.slice(e2);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+      save();
+    }
+  });
+  document.getElementById('clear-btn').addEventListener('click', function () {
+    ta.value = '';
+    try { localStorage.removeItem(key); } catch (e) {}
+    ta.focus();
+  });
+})();
+</script>
 {% endblock %}

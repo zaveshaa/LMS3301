@@ -2,14 +2,19 @@
 {% block title %}Вход — LMS3301{% endblock %}
 {% block content %}
 <div class="card" style="max-width:400px; margin:48px auto; padding:36px;">
-  <h1>Вход</h1>
-  <p class="meta" style="margin-bottom:24px;">Войдите, чтобы продолжить</p>
+  <div style="margin-bottom:26px;">
+    <h1 style="font-size:1.4rem;">LMS3301</h1>
+  </div>
   <form method="post">
-    <label for="login">Логин</label>
-    <input type="text" id="login" name="login" required>
-    <label for="password">Пароль</label>
-    <input type="password" id="password" name="password" required>
-    <button class="btn" type="submit" style="width:100%; justify-content:center; margin-top:6px;">Войти</button>
+    <div class="field">
+      <label for="login">Логин</label>
+      <input type="text" id="login" name="login" autocomplete="username" autofocus required>
+    </div>
+    <div class="field">
+      <label for="password">Пароль</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn btn-block" type="submit" style="margin-top:8px;">Войти</button>
   </form>
 </div>
 {% endblock %}
