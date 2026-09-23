@@ -20,7 +20,6 @@
   </div>
 </div>
 
-<!-- =============================================== РАБОТЫ -->
 <section id="tab-works" class="panel-section">
   <div class="card">
     <div class="panel-top">
@@ -33,14 +32,14 @@
         <div><label>Название</label><input type="text" name="title" required></div>
         <div style="flex:0 0 150px;">
           <label>Тип</label>
-          <select name="type">
+          <select name="type" id="new-work-type">
             <option value="practical" selected>Практика</option>
             <option value="lecture">Лекция</option>
           </select>
         </div>
       </div>
-      <div class="field"><label>Описание</label><input type="text" name="description"></div>
-      <div class="field"><label>Содержание</label><textarea name="content" rows="4"></textarea></div>
+      <div class="field" id="new-work-desc"><label>Описание</label><input type="text" name="description"></div>
+      <div class="field" id="new-work-content" hidden><label>Содержание</label><textarea name="content" rows="4"></textarea></div>
       <div class="btn-row">
         <button class="btn" type="submit">Создать работу</button>
         <button class="btn btn-outline" type="button" onclick="toggleNewWork()">Отмена</button>
@@ -58,7 +57,7 @@
       <span class="type-badge {{ 'type-lecture' if w['type'] == 'lecture' else 'type-practical' }}">{{ type_label[w['type']] }}</span>
       <span class="wc-title">{{ w.title }}</span>
       <span class="wc-meta">
-        <span class="count-badge">задач: {{ item.tasks|length }}</span>
+        {% if w['type'] == 'practical' %}<span class="count-badge">задач: {{ item.tasks|length }}</span>{% endif %}
         {% if item.groups %}
           {% for g in item.groups %}<span class="group-chip">{{ g }}</span>{% endfor %}
         {% else %}
@@ -78,8 +77,12 @@
           </select>
         </div>
       </div>
+      {% if w['type'] == 'practical' %}
       <div class="field"><label>Описание</label><input type="text" name="description" value="{{ w.description }}" form="work-edit-{{ w.id }}"></div>
+      {% endif %}
+      {% if w['type'] == 'lecture' %}
       <div class="field"><label>Содержание</label><textarea name="content" rows="4" form="work-edit-{{ w.id }}">{{ w.content }}</textarea></div>
+      {% endif %}
       <div class="btn-row">
         <form id="work-edit-{{ w.id }}" method="post" action="{{ url_for('admin_work_detail', work_id=w.id) }}">
           <input type="hidden" name="action" value="edit">
@@ -118,7 +121,18 @@
             <div><label>Формат ввода</label><textarea name="input_format" rows="2"></textarea></div>
             <div><label>Формат вывода</label><textarea name="output_format" rows="2"></textarea></div>
           </div>
-          <div class="btn-row">
+          <div style="margin-top:14px;"><label>Примеры</label></div>
+          <div class="test-rows">
+            <div class="test-row">
+              <div><label>Ввод</label><textarea name="inp" rows="2"></textarea></div>
+              <div><label>Вывод</label><textarea name="outp" rows="2"></textarea></div>
+              <button type="button" class="btn btn-outline btn-sm row-del" onclick="removeTestRow(this)">Удалить пример</button>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:8px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="addTestRow(this)">+ Пример</button>
+          </div>
+          <div class="btn-row" style="margin-top:12px;">
             <button class="btn" type="submit">Добавить задачу</button>
             <button class="btn btn-outline" type="button" onclick="toggleNewTask({{ w.id }})">Отмена</button>
           </div>
@@ -134,6 +148,7 @@
             <span class="count-badge" style="margin-right:8px;">{{ loop.index }}</span>{{ t.title }}
           </span>
           <span class="tc-links">
+            <a class="link-act" href="{{ url_for('student_task', work_id=w.id, task_id=t.id) }}">Предпросмотр</a>
             <button class="link-act" type="button" onclick="toggleTests({{ t.id }})">Тесты ({{ tt.tests|length }})</button>
             <button class="link-act" type="button" onclick="toggleTaskEdit({{ t.id }})">Изменить</button>
             <form method="post" action="{{ url_for('admin_task_delete', task_id=t.id) }}"
@@ -149,6 +164,17 @@
               <div class="lbl">Форматы</div>
               <pre class="pre-view">Ввод: {{ t.input_format }}
 Вывод: {{ t.output_format }}</pre>
+            </div>
+            <div class="io-col">
+              <div class="lbl">Примеры</div>
+              {% if tt.tests %}
+                {% for t2 in tt.tests[:2] %}
+                <pre class="pre-view">Вход: {{ t2.input_data if t2.input_data else '(пусто)' }}
+Вывод: {{ t2.output_data }}</pre>
+                {% endfor %}
+              {% else %}
+              <pre class="pre-view">Нет примеров</pre>
+              {% endif %}
             </div>
           </div>
 
@@ -224,9 +250,10 @@
   {% else %}
   <div class="empty">Работ пока нет.</div>
   {% endfor %}
+
+  <div class="empty" id="work-filter-empty" hidden>По запросу ничего не найдено.</div>
 </section>
 
-<!-- =============================================== СТУДЕНТЫ -->
 <section id="tab-students" class="panel-section" hidden>
   <div class="card">
     <div class="panel-top">
@@ -244,6 +271,10 @@
         <button class="btn btn-outline" type="button" onclick="toggleNewStudent()">Отмена</button>
       </div>
     </form>
+    <div class="page-tools" style="margin-top:18px;">
+      <span class="filter-label">Поиск по логину или ФИО</span>
+      <input id="student-filter" type="search">
+    </div>
   </div>
 
   {% for group, students in student_groups.items() %}
@@ -255,12 +286,13 @@
     <table class="admin-table">
       <tr><th style="width:34%;">ФИО</th><th>Логин</th><th style="width:22%;">Пароль</th><th></th></tr>
       {% for s in students %}
-      <tr>
+      <tr data-si="{{ s.id }}" data-needle="{{ s.login }} {{ s.full_name or '' }} группа {{ group }}">
         <td>{{ s.full_name or '—' }}</td>
         <td class="mono-cell">{{ s.login }}</td>
         <td class="mono-cell">{{ s.password_show }}</td>
         <td style="white-space:nowrap; text-align:right;">
-          <button class="link-act" type="button" onclick="toggleStudentEdit({{ s.id }})">Изменить</button>
+          <a class="link-act" href="{{ url_for('admin_student_profile', user_id=s.id) }}">Профиль</a>
+          <button class="link-act" type="button" onclick="toggleStudentEdit({{ s.id }})" style="margin-left:12px;">Изменить</button>
           <form method="post" action="{{ url_for('admin_student_reset', user_id=s.id) }}" style="display:inline;"
                 onsubmit="return confirm('Сбросить пароль студента {{ s.login }}?');">
             <button class="link-act" type="submit" style="margin-left:12px;">Сброс пароля</button>
@@ -292,19 +324,27 @@
   {% else %}
   <div class="empty">Студентов пока нет.</div>
   {% endfor %}
+
+  <div class="empty" id="student-filter-empty" hidden>По запросу ничего не найдено.</div>
 </section>
 
 <style>
   .new-task-box { border: 1px dashed #c3c9d6; background: #fbfcff; padding: 16px; margin-bottom: 14px; }
+  .filter-label { font-size: .82rem; color: var(--muted); margin-right: 8px; }
+  .page-tools input { width: 260px; max-width: 100%; }
+  .new-task-box .test-row { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 10px; }
+  .new-task-box .test-row > div { flex: 1; min-width: 0; }
+  .new-task-box .row-del { white-space: nowrap; }
 </style>
 
 <script>
-function showTab(name) {
+function showTab(name, hash) {
   document.getElementById('tab-works').hidden = name !== 'works';
   document.getElementById('tab-students').hidden = name !== 'students';
   document.querySelectorAll('.tab').forEach(function (t) {
     t.classList.toggle('active', t.dataset.tab === name);
   });
+  try { history.replaceState(null, '', hash || '#' + name); } catch (e) {}
 }
 function toggleNewWork() { var el = document.getElementById('new-work-form'); el.hidden = !el.hidden; }
 function toggleNewStudent() { var el = document.getElementById('new-student-form'); el.hidden = !el.hidden; }
@@ -325,17 +365,74 @@ function toggleStudentEdit(id) {
   var el = document.getElementById('student-edit-' + id);
   if (el) el.hidden = !el.hidden;
 }
+function addTestRow(btn) {
+  var rows = btn.closest('.test-rows');
+  var row = rows.querySelector('.test-row');
+  var clone = row.cloneNode(true);
+  clone.querySelectorAll('textarea').forEach(function (t) { t.value = ''; });
+  rows.appendChild(clone);
+  clone.querySelector('textarea[name="inp"]').focus();
+}
+function removeTestRow(btn) {
+  var rows = btn.closest('.test-rows');
+  var all = rows.querySelectorAll('.test-row');
+  if (all.length > 1) {
+    btn.closest('.test-row').remove();
+  } else {
+    btn.closest('.test-row').querySelectorAll('textarea').forEach(function (t) { t.value = ''; });
+  }
+}
+var newWorkType = document.getElementById('new-work-type');
+if (newWorkType) {
+  var nwd = document.getElementById('new-work-desc');
+  var nwc = document.getElementById('new-work-content');
+  var syncNewWorkFields = function () {
+    var lec = newWorkType.value === 'lecture';
+    nwd.hidden = lec;
+    nwc.hidden = !lec;
+  };
+  newWorkType.addEventListener('change', syncNewWorkFields);
+  syncNewWorkFields();
+}
 var workFilter = document.getElementById('work-filter');
 if (workFilter) workFilter.addEventListener('input', function () {
   var q = workFilter.value.trim().toLowerCase();
+  var closed = document.getElementById('work-filter-empty');
+  var any = false;
   document.querySelectorAll('.work-card').forEach(function (card) {
     var title = card.querySelector('.wc-title').textContent.toLowerCase();
-    card.style.display = (!q || title.indexOf(q) !== -1) ? '' : 'none';
+    var show = !q || title.indexOf(q) !== -1;
+    card.style.display = show ? '' : 'none';
+    if (show) any = true;
   });
+  if (closed) closed.hidden = any || !q;
+});
+var studentFilter = document.getElementById('student-filter');
+if (studentFilter) studentFilter.addEventListener('input', function () {
+  var q = studentFilter.value.trim().toLowerCase();
+  var any = false;
+  document.querySelectorAll('#tab-students tr[data-si]').forEach(function (row) {
+    var show = !q || (row.dataset.needle || '').toLowerCase().indexOf(q) !== -1;
+    row.style.display = show ? '' : 'none';
+    var edit = document.getElementById('student-edit-' + row.dataset.si);
+    if (edit) edit.style.display = show ? '' : 'none';
+    if (show) any = true;
+  });
+  document.querySelectorAll('#tab-students .card').forEach(function (card) {
+    var tbl = card.querySelector('table.admin-table');
+    if (!tbl) return;
+    var has = Array.prototype.slice.call(card.querySelectorAll('tr[data-si]')).some(function (r) {
+      return r.style.display !== 'none';
+    });
+    card.style.display = has ? '' : 'none';
+  });
+  var empty = document.getElementById('student-filter-empty');
+  if (empty) empty.hidden = any || !q;
 });
 function openHash() {
   var m = location.hash.match(/^#work-(\d+)(?:task-(\d+))?/);
   if (m) {
+    showTab('works', location.hash);
     var w = document.getElementById('work-body-' + m[1]);
     if (w) w.hidden = false;
     if (m[2]) {
@@ -346,8 +443,13 @@ function openHash() {
       var head = document.getElementById('work-' + m[1]);
       if (head) head.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }, 50);
-  } else if (location.hash === '#students') {
-    showTab('students');
+    return;
+  }
+  var section = location.hash === '#students' ? 'students' : 'works';
+  showTab(section, /^#work-/.test(location.hash) ? location.hash : undefined);
+  if (section === 'students') {
+    var el = document.getElementById('tab-students');
+    if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 }
 document.addEventListener('DOMContentLoaded', openHash);

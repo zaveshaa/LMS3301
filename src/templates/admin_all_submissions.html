@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Все решения — LMS3301{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('admin_dashboard') }}">Преподавательская</a>
+  <span class="sep">/</span>
+  <span>Все решения</span>
+</div>
+
+<div class="card">
+  <div class="page-head">
+    <h1>Все решения</h1>
+    <span class="count-badge">{{ submissions|length }}</span>
+  </div>
+  <form method="get" class="row2" style="margin-top:16px;">
+    <div><input type="search" name="q" value="{{ search }}" placeholder="Поиск: студент, работа, задача..."></div>
+    <div style="flex:0 0 200px;">
+      <select name="status">
+        <option value="" {% if not filter_status %}selected{% endif %}>Любой статус</option>
+        <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>На проверке</option>
+        <option value="ok" {% if filter_status == 'ok' %}selected{% endif %}>Зачтено</option>
+        <option value="error" {% if filter_status == 'error' %}selected{% endif %}>Не зачтено</option>
+      </select>
+    </div>
+    <div style="flex:0 0 auto;"><button class="btn" type="submit">Найти</button></div>
+  </form>
+</div>
+
+{% for s in submissions %}
+<div class="card" id="sub-{{ s.id }}">
+  <div class="sub-row">
+    <div class="sub-info">
+      <a href="{{ url_for('admin_dashboard', _anchor='work-' ~ s.work_id) }}">{{ s.work_title }}</a>
+      <span class="sep">·</span>
+      <a href="{{ url_for('admin_student_profile', user_id=s.user_id) }}">{{ s.sname or s.slogin }}</a>
+      <span class="sep">·</span>
+      <span>{{ s.task_title }}</span>
+    </div>
+    <div class="sub-right">
+      <span class="status-badge status-{{ s.status }}">{{ status_label[s.status] }}</span>
+      <span class="sub-time">{{ s.created_at }}</span>
+    </div>
+  </div>
+  {% if s.comment %}
+  <div class="sub-comment">{{ s.comment }}</div>
+  {% endif %}
+  <div class="sub-tests-line">
+    Тесты: {{ s.tests_passed }} / {{ s.tests_total }} пройдено
+  </div>
+  <details>
+    <summary>Вердикт по тестам</summary>
+    <table class="tests-table">
+      <tr><th>Тест</th><th>Ввод</th><th>Ожидалось</th><th>Результат</th></tr>
+      {% for t in s.tests %}
+      <tr class="{{ 'row-ok' if t.passed else 'row-err' }}">
+        <td>{{ loop.index }}</td>
+        <td><pre class="tiny">{{ t.input_data }}</pre></td>
+        <td><pre class="tiny">{{ t.output_data }}</pre></td>
+        <td>{% if t.passed %}✓{% else %}{{ t.actual_output or t.error }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </details>
+  <details>
+    <summary>Код решения</summary>
+    <pre class="code-view">{{ s.code }}</pre>
+  </details>
+  <form method="post" class="grade-row" action="{{ url_for('admin_submission_grade', sub_id=s.id) }}">
+    <select name="status" id="sub-status-{{ s.id }}">
+      <option value="pending" {% if s.status == 'pending' %}selected{% endif %}>На проверке</option>
+      <option value="ok" {% if s.status == 'ok' %}selected{% endif %}>Зачтено</option>
+      <option value="error" {% if s.status == 'error' %}selected{% endif %}>Не зачтено</option>
+    </select>
+    <input type="text" name="comment" value="{{ s.comment }}" placeholder="Комментарий преподавателя">
+    <button class="btn btn-sm" type="submit">Сохранить</button>
+  </form>
+  <form method="post" class="grade-row" action="{{ url_for('admin_submission_recheck', sub_id=s.id) }}">
+    <button class="btn btn-sm btn-outline" type="submit">Перепроверить (офлайн-судья)</button>
+  </form>
+</div>
+{% else %}
+<div class="card">
+  <p class="muted">Решений пока нет.</p>
+</div>
+{% endfor %}
+{% endblock %}

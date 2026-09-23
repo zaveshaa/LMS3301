@@ -19,7 +19,7 @@
   </div>
 
   {% if work['type'] == 'lecture' %}
-  <div class="statement-block">{{ work.content if work.content else 'Материалы лекции ещё не добавлены.' }}</div>
+  <div class="lecture-content">{{ (work.content if work.content else 'Материалы лекции ещё не добавлены.')|lecture|safe }}</div>
 
   {% elif tasks %}
   <ul class="task-list">

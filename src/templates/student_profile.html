@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Профиль: {{ student.login }} — LMS3301{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('admin_dashboard', _anchor='students') }}">Студенты</a>
+  <span class="sep">/</span>
+  <a href="{{ url_for('admin_dashboard', _anchor='students') }}">{{ student.login }}</a>
+  <span class="sep">/</span>
+  <span>Профиль</span>
+</div>
+
+<div class="card">
+  <div class="page-head" style="border:none; padding-bottom:0; margin-bottom:18px;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <h1 style="margin:0;">{{ student.full_name or student.login }}</h1>
+      <span class="count-badge">{{ student.login }}</span>
+      {% if group %}<span class="group-chip">группа {{ group }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="stats-mini">
+    <span>Работ — <b>{{ work_count }}</b></span>
+    <span>Выполнено работ — <b>{{ works_done }}</b></span>
+    <span>Задач решено — <b>{{ tasks_done }} из {{ tasks_total }}</b></span>
+    <span>Отправок — <b>{{ submissions_total }}</b></span>
+  </div>
+</div>
+
+{% for item in works %}
+{% set w = item.work %}
+<div class="card">
+  <div class="panel-top" style="margin-bottom:16px;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span class="type-badge {{ 'type-lecture' if w['type'] == 'lecture' else 'type-practical' }}">{{ type_label[w['type']] }}</span>
+      <h2 style="margin:0;">{{ w.title }}</h2>
+    </div>
+    {% if w['type'] == 'practical' %}
+    <span class="count-badge">решено {{ item.done_count }} из {{ item.tasks|length }}</span>
+    {% endif %}
+  </div>
+
+  {% if w['type'] == 'lecture' %}
+  {% else %}
+  {% for t in item.tasks %}
+  <div class="prof-task" id="task-{{ t.task.id }}">
+    <div class="prof-task-head">
+      <span class="count-badge" style="align-self:normal;">{{ loop.index }}</span>
+      <span class="task-name">{{ t.task.title }}</span>
+      {% if t.latest %}
+      <span class="status-badge status-{{ t.latest.status }}">{{ status_label[t.latest.status] }}</span>
+      {% else %}
+      <span class="status-badge status-pending">Не решено</span>
+      {% endif %}
+      <span class="meta" style="margin-left:auto;">попыток: {{ t.subs|length }}</span>
+    </div>
+    <details class="prof-subs">
+      <summary>Решения ({{ t.subs|length }})</summary>
+      {% for s in t.subs %}
+      <div class="prof-sub">
+        <div class="prof-sub-head">
+          <span>{{ s.created_at }}</span>
+          <span class="status-badge status-{{ s.status }}">{{ status_label[s.status] }}</span>
+        </div>
+        <pre class="prof-code">{{ s.code }}</pre>
+        {% if s.comment %}
+        <div class="submit-comment">{{ s.comment }}</div>
+        {% endif %}
+        <form method="post" action="{{ url_for('admin_submission_grade', sub_id=s.id) }}" class="grade-row">
+          <label style="margin:0;">Статус
+            <select name="status">
+              <option value="pending" {% if s.status == 'pending' %}selected{% endif %}>На проверке</option>
+              <option value="ok" {% if s.status == 'ok' %}selected{% endif %}>Зачтено</option>
+              <option value="error" {% if s.status == 'error' %}selected{% endif %}>Не зачтено</option>
+            </select>
+          </label>
+          <label style="margin:0; flex:1; min-width:180px;">Комментарий
+            <input type="text" name="comment" value="{{ s.comment }}">
+          </label>
+          <button class="btn btn-outline btn-sm" type="submit">Сохранить</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="prof-sub"><p class="meta">Решений нет.</p></div>
+      {% endfor %}
+    </details>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+{% else %}
+<div class="empty">Для студента нет доступных работ.</div>
+{% endfor %}
+{% endblock %}

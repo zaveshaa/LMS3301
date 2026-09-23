@@ -17,10 +17,9 @@
 
     {% if task.input_format or task.output_format %}
     <div class="card">
-      <div class="cf-head">Input</div>
-      <div class="cf-text">{{ task.input_format or '—' }}</div>
-      <div class="cf-head" style="margin-top:16px;">Output</div>
-      <div class="cf-text">{{ task.output_format or '—' }}</div>
+      <h2>Формат</h2>
+      <div class="cf-text"><b class="cf-label">Ввод:</b> {{ task.input_format or '—' }}</div>
+      <div class="cf-text" style="margin-top:8px;"><b class="cf-label">Вывод:</b> {{ task.output_format or '—' }}</div>
     </div>
     {% endif %}
 
@@ -29,9 +28,7 @@
       <h2>Примеры</h2>
       {% for tc in tests[:2] %}
       <div class="cf-example-title">Пример {{ loop.index }}</div>
-      <div class="cf-head">Input</div>
       <pre class="cf-code">{{ tc.input_data if tc.input_data else 'нет входных данных' }}</pre>
-      <div class="cf-head">Output</div>
       <pre class="cf-code">{{ tc.output_data }}</pre>
       {% endfor %}
     </div>
@@ -46,6 +43,9 @@
         <span class="status-badge status-{{ submission.status }}">{{ status_label[submission.status] }}</span>
         <span>Попытка №{{ attempt_count }} · {{ submission.created_at }}</span>
       </div>
+      {% if submission.comment %}
+      <div class="submit-comment">{{ submission.comment }}</div>
+      {% endif %}
       {% endif %}
       <form method="post" action="{{ url_for('student_submit', work_id=work.id, task_id=task.id) }}"
             onsubmit="return confirm('Отправить решение на проверку?');">
@@ -55,6 +55,57 @@
           <button class="btn btn-outline" id="clear-btn" type="button">Очистить</button>
         </div>
       </form>
+
+      {% if submission_tests %}
+      {% set passed_count = submission_tests | selectattr('passed') | list | length %}
+      <div class="cf-console">
+        <div class="cf-console-head">
+          <span class="cf-console-title">ВЫВОД ПРОГРАММЫ · {{ task.title }}</span>
+          <span class="cf-console-dots"><i></i><i></i><i></i></span>
+        </div>
+        <div class="cf-console-body">
+          <div class="cf-cmd">python3 main.py &lt; tests.in</div>
+          {% for st in submission_tests %}
+          <div class="cf-line {% if not st.passed %}cf-line-err{% endif %}">
+            <span class="cf-prompt">$ test{{ loop.index }}</span>
+            {% if st.passed %}
+            <span class="cf-ok">✓ OK</span>
+            {% else %}
+            <span class="cf-err">✗ FAIL</span>
+            {% endif %}
+          </div>
+          {% if st.input_data %}
+          <div class="cf-line cf-line-muted">  ввод:</div>
+          <pre class="cf-pre">{{ st.input_data }}</pre>
+          {% endif %}
+          {% if not st.passed %}
+            {% if st.error %}
+            <div class="cf-line cf-line-err">  ошибка: {{ st.error }}</div>
+            {% endif %}
+            <div class="cf-line cf-line-muted">  ожидалось:</div>
+            <pre class="cf-pre">{{ st.output_data }}</pre>
+            <div class="cf-line cf-line-muted">  получено:</div>
+            <pre class="cf-pre">{{ st.actual_output if st.actual_output else '(пусто)' }}</pre>
+          {% else %}
+            <pre class="cf-pre cf-pre-muted">{{ st.actual_output if st.actual_output else '(пустой вывод)' }}</pre>
+          {% endif %}
+          {% endfor %}
+          <div class="cf-cmd cf-{% if passed_count == submission_tests | length %}ok{% else %}err{% endif %}">
+            итог: пройдено {{ passed_count }} из {{ submission_tests | length }} тестов
+          </div>
+        </div>
+      </div>
+      {% elif submission %}
+      <div class="cf-console">
+        <div class="cf-console-head">
+          <span class="cf-console-title">ВЫВОД ПРОГРАММЫ</span>
+          <span class="cf-console-dots"><i></i><i></i><i></i></span>
+        </div>
+        <div class="cf-console-body">
+          <div class="cf-line cf-line-muted">(детализация по тестам ещё не сохранена)</div>
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>

@@ -91,6 +91,31 @@
   .status-ok { color: #065f46; background: #ecfdf5; }
   .status-error { color: #991b1b; background: #fee2e2; }
   .submit-status { display: inline-flex; align-items: center; gap: 10px; font-size: .84rem; color: var(--sub); background: #fbfcff; border: 1px solid var(--line); padding: 8px 14px; margin-bottom: 12px; }
+  .submit-comment { margin-top: 8px; padding: 10px 14px; background: #fffbf0; border: 1px solid var(--fbd); color: var(--fgt); font-size: .88rem; line-height: 1.5; white-space: pre-line; }
+
+  /* ---------- student profile (admin) ---------- */
+  .prof-task { border: 1px solid var(--line); margin-bottom: 10px; }
+  .prof-task-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #f9fafc; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .prof-task-head .task-name { font-weight: 600; color: var(--heading); }
+  .prof-subs { border-top: 0; }
+  .prof-subs summary { padding: 11px 14px; cursor: pointer; color: var(--accent); font-weight: 500; font-size: .84rem; }
+  .prof-sub { border-top: 1px solid var(--line); padding: 14px; }
+  .prof-sub-head { display: flex; align-items: center; gap: 12px; font-size: .82rem; color: var(--sub); margin-bottom: 10px; }
+  pre.prof-code { background: #f6f8fb; border: 1px solid var(--line); padding: 12px; font-size: .82rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: "SF Mono", Menlo, Consolas, monospace; margin: 0 0 12px; }
+  .grade-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .tests-table { width: 100%; border-collapse: collapse; font-family: inherit; margin-top: 8px; }
+  .tests-table th, .tests-table td { border: 1px solid var(--line); padding: 5px 7px; font-size: .78rem; vertical-align: top; text-align: left; }
+  .tests-table th { background: #f4f6fa; font-weight: 600; color: var(--sub); }
+  .tests-table td:first-child { white-space: nowrap; }
+  .row-ok td:first-child { color: var(--ok, #0d7a44); font-weight: 600; }
+  .row-err td:first-child { color: var(--danger, #c0392b); font-weight: 600; }
+  .row-ok { background: #f5fbf7; }
+  .row-err { background: #fdf6f3; }
+  .tests-table pre { margin: 0; padding: 2px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
+  .tiny { font-size: .72rem; line-height: 1.3; color: var(--sub); }
+  .grade-row label { font-size: .76rem; font-weight: 600; color: var(--sub); }
+  .grade-row select { width: auto; min-width: 140px; padding: 8px 30px 8px 10px; }
+  .grade-row input { padding: 8px 10px; }
 
   /* ---------- student cabinet ---------- */
   .work-item { display: block; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); padding: 20px 24px; margin-bottom: 14px; text-decoration: none; color: inherit; transition: border-color .12s ease, background .12s ease; }
@@ -110,6 +135,14 @@
   .page-head .meta { font-size: .84rem; }
 
   .statement-block { font-size: .97rem; line-height: 1.75; color: var(--text); white-space: pre-line; }
+  .lecture-content p { margin: 0 0 14px; font-size: .97rem; line-height: 1.75; color: var(--text); }
+  .lecture-content h4.lec-h { font-size: 1rem; font-weight: 700; color: var(--heading); margin: 24px 0 10px; letter-spacing: .1px; }
+  pre.code-block { background: #f2f4f8; border: 1px solid #dde2ea; border-left: 3px solid var(--accent); padding: 14px 16px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .86rem; line-height: 1.6; overflow-x: auto; margin: 0 0 16px; white-space: pre; tab-size: 4; }
+  .tk-comment { color: #89929f; font-style: italic; }
+  .tk-string { color: #b0452f; }
+  .tk-kw { color: #1d4ed8; font-weight: 600; }
+  .tk-fn { color: #6b21a8; }
+  .tk-num { color: #0d7a44; }
   .task-list { list-style: none; }
   .task-item { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-bottom: none; padding: 16px 18px; text-decoration: none; color: inherit; transition: background .12s ease, border-color .12s ease; }
   .task-item:last-child { border-bottom: 1px solid var(--line); margin-bottom: 14px; }
@@ -122,10 +155,10 @@
   .task-layout { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: start; }
   @media (max-width: 900px) { .task-layout { grid-template-columns: 1fr; } }
   .info-col .card, .solve-col .card { margin-bottom: 18px; }
-  .cf-head { font-size: .8rem; font-weight: 700; letter-spacing: .3px; color: var(--heading); margin: 0 0 6px; }
+  .cf-label { color: var(--muted); font-weight: 600; }
   .cf-text { font-size: .95rem; line-height: 1.7; color: var(--text); white-space: pre-line; }
-  .cf-example-title { font-size: .78rem; font-weight: 600; color: var(--sub); margin: 14px 0 8px; }
-  .cf-code { background: #f6f8fb; border: 1px solid var(--line); padding: 10px 12px; font-size: .82rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: "SF Mono", Menlo, Consolas, monospace; margin: 0 0 10px; }
+  .cf-example-title { font-size: .82rem; font-weight: 600; color: var(--sub); margin: 14px 0 6px; }
+  .cf-code { background: #f6f8fb; border: 1px solid var(--line); padding: 8px 12px; font-size: .82rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; font-family: "SF Mono", Menlo, Consolas, monospace; margin: 0; }
 
   .code-editor { width: 100%; min-height: 340px; padding: 14px; border: 1px solid var(--line-strong); font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .88rem; line-height: 1.6; background: var(--surface); color: var(--text); resize: vertical; }
   .code-editor:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(43,58,99,.12); }
@@ -166,7 +199,7 @@
   .tc-name { font-weight: 600; color: var(--heading); font-size: .94rem; flex: 1; }
   .tc-links { display: flex; gap: 16px; align-items: center; }
   .tc-body { padding: 16px; border-bottom: 1px solid var(--line); }
-  .tc-io { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .tc-io { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px; }
   @media (max-width: 640px) { .tc-io { grid-template-columns: 1fr; } }
   .tc-io .io-col { background: #f7f8fb; border: 1px solid var(--line); padding: 10px 12px; min-height: 42px; }
   pre.pre-view { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .8rem; line-height: 1.5; white-space: pre-wrap; color: var(--sub); margin: 0; }
@@ -228,5 +261,74 @@
   {% endwith %}
   {% block content %}{% endblock %}
 </main>
+<script>
+(function () {
+  function esc(s) {
+    return s.replace(/[&<>]/g, function (c) {
+      return c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;';
+    });
+  }
+  var kwSet = new Set('False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield'.split(' '));
+  var biSet = new Set('abs all any ascii bin bool bytearray bytes callable chr classmethod compile complex dict dir divmod enumerate eval exec filter float format frozenset getattr globals hasattr hash help hex id input int isinstance issubclass iter len list locals map max memoryview min next object oct open ord pow print property range repr reversed round set setattr slice sorted staticmethod str sum super tuple type vars zip input print len str int map'.split(' '));
+  var NUM_RE = /^(?:0[xX][0-9a-fA-F]+|0[oO][0-7]+|0[bB][01]+|(?:(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?)j?)/;
+
+  document.querySelectorAll('pre.code-block').forEach(function (pre) {
+    var s = pre.textContent, out = '', i = 0, n = s.length;
+
+    function pushSpan(cls, text) {
+      out += '<span class="tk-' + cls + '">' + esc(text) + '</span>';
+    }
+    function tryString(from) {
+      var p = from;
+      while (p < n && /[rfubRFUB]/.test(s[p])) p++;
+      var q1 = s[p], q3 = s.slice(p, p + 3);
+      var qlen = (q3 === "'''" || q3 === '"""') ? 3 : ((q1 === "'" || q1 === '"') ? 1 : 0);
+      if (!qlen) return null;
+      var rep = qlen === 3 ? q1 + q1 + q1 : q1;
+      var k = p + qlen;
+      while (k < n) {
+        if (s[k] === '\\') { k += 2; continue; }
+        if (qlen === 1 ? s[k] === q1 : s.slice(k, k + 3) === rep) break;
+        k++;
+      }
+      return s.slice(from, k < n ? k + qlen : n);
+    }
+
+    while (i < n) {
+      var c = s[i];
+      if (c === '#') {
+        var e = s.indexOf('\n', i);
+        if (e < 0) e = n;
+        pushSpan('comment', s.slice(i, e));
+        i = e;
+        continue;
+      }
+      var str = tryString(i);
+      if (str) {
+        pushSpan('string', str);
+        i += str.length;
+        continue;
+      }
+      if (/[A-Za-z_]/.test(c)) {
+        var m = /^[A-Za-z_][A-Za-z0-9_]*/.exec(s.slice(i));
+        var word = m[0], after = s[i + word.length];
+        if (kwSet.has(word)) pushSpan('kw', word);
+        else if (after === '(') pushSpan('fn', word);
+        else if (biSet.has(word)) pushSpan('fn', word);
+        else out += esc(word);
+        i += word.length;
+        continue;
+      }
+      if (/\d/.test(c) || (c === '.' && /\d/.test(s[i + 1] || ''))) {
+        var mn = NUM_RE.exec(s.slice(i));
+        if (mn) { pushSpan('num', mn[0]); i += mn[0].length; continue; }
+      }
+      out += esc(c);
+      i++;
+    }
+    pre.innerHTML = out;
+  });
+})();
+</script>
 </body>
 </html>
