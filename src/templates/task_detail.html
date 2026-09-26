@@ -58,54 +58,62 @@
 
       {% if submission_tests %}
       {% set passed_count = submission_tests | selectattr('passed') | list | length %}
-      <div class="cf-console">
-        <div class="cf-console-head">
-          <span class="cf-console-title">ВЫВОД ПРОГРАММЫ · {{ task.title }}</span>
-          <span class="cf-console-dots"><i></i><i></i><i></i></span>
+      <div class="term" id="submit-term">
+        <div class="term-bar">
+          <span class="term-dots"><i></i><i></i><i></i></span>
+          <span class="term-title">проверка — {{ task.title }}</span>
+          <span style="margin-left:auto; color:{{ '#57d278' if passed_count == submission_tests | length else '#ff6b62' }};">
+            {{ passed_count }} / {{ submission_tests | length }}
+          </span>
         </div>
-        <div class="cf-console-body">
-          <div class="cf-cmd">python3 main.py &lt; tests.in</div>
+        <div class="term-body">
           {% for st in submission_tests %}
-          <div class="cf-line {% if not st.passed %}cf-line-err{% endif %}">
-            <span class="cf-prompt">$ test{{ loop.index }}</span>
-            {% if st.passed %}
-            <span class="cf-ok">✓ OK</span>
-            {% else %}
-            <span class="cf-err">✗ FAIL</span>
-            {% endif %}
-          </div>
+          <div class="term-cmd"><span class="term-prompt">$</span> python3 main.py &lt; test{{ loop.index }}.in</div>
           {% if st.input_data %}
-          <div class="cf-line cf-line-muted">  ввод:</div>
-          <pre class="cf-pre">{{ st.input_data }}</pre>
+          <div class="term-mut">ввод: {{ st.input_data }}</div>
           {% endif %}
-          {% if not st.passed %}
-            {% if st.error %}
-            <div class="cf-line cf-line-err">  ошибка: {{ st.error }}</div>
-            {% endif %}
-            <div class="cf-line cf-line-muted">  ожидалось:</div>
-            <pre class="cf-pre">{{ st.output_data }}</pre>
-            <div class="cf-line cf-line-muted">  получено:</div>
-            <pre class="cf-pre">{{ st.actual_output if st.actual_output else '(пусто)' }}</pre>
+          {% if st.passed %}
+          <div class="term-ok">✓ PASS</div>
           {% else %}
-            <pre class="cf-pre cf-pre-muted">{{ st.actual_output if st.actual_output else '(пустой вывод)' }}</pre>
+          {% if st.error %}
+          <div class="term-err">{{ st.error }}</div>
+          {% endif %}
+          <div class="term-mut">ожидалось: <span class="term-out">{{ st.output_data }}</span></div>
+          <div class="term-mut">получено:  <span class="term-out">{{ st.actual_output if st.actual_output else '(пусто)' }}</span></div>
+          <div class="term-err">✗ FAIL</div>
           {% endif %}
           {% endfor %}
-          <div class="cf-cmd cf-{% if passed_count == submission_tests | length %}ok{% else %}err{% endif %}">
-            итог: пройдено {{ passed_count }} из {{ submission_tests | length }} тестов
-          </div>
+          <span class="term-cursor"></span>
         </div>
       </div>
       {% elif submission %}
-      <div class="cf-console">
-        <div class="cf-console-head">
-          <span class="cf-console-title">ВЫВОД ПРОГРАММЫ</span>
-          <span class="cf-console-dots"><i></i><i></i><i></i></span>
+      <div class="term">
+        <div class="term-bar">
+          <span class="term-dots"><i></i><i></i><i></i></span>
+          <span class="term-title">проверка — {{ task.title }}</span>
         </div>
-        <div class="cf-console-body">
-          <div class="cf-line cf-line-muted">(детализация по тестам ещё не сохранена)</div>
+        <div class="term-body">
+          <div class="term-mut">(детализация по тестам ещё не сохранена)</div>
+          <span class="term-cursor"></span>
         </div>
       </div>
       {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Консоль</h2>
+  <div class="term-hint">Запустите решение на своих входных данных, не отправляя его на проверку.</div>
+  <div class="term" id="run-term">
+    <div class="term-bar">
+      <span class="term-dots"><i></i><i></i><i></i></span>
+      <span class="term-title">python3 main.py — локальный запуск</span>
+    </div>
+    <div class="term-body" id="run-out"><span class="term-cursor"></span></div>
+    <div class="term-input">
+      <textarea id="run-stdin" rows="3" spellcheck="false" placeholder="входные данные (stdin) для программы…"></textarea>
+      <button class="term-btn" id="run-btn" type="button">Запустить</button>
     </div>
   </div>
 </div>
@@ -134,6 +142,50 @@
     ta.value = '';
     try { localStorage.removeItem(key); } catch (e) {}
     ta.focus();
+  });
+
+  function esc(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  var runBtn = document.getElementById('run-btn');
+  var runOut = document.getElementById('run-out');
+  var runStdin = document.getElementById('run-stdin');
+  runBtn.addEventListener('click', function () {
+    runBtn.disabled = true;
+    runBtn.textContent = 'Запуск…';
+    runOut.textContent = '';
+    var q = new URLSearchParams();
+    q.set('code', ta.value);
+    q.set('stdin', runStdin.value);
+    fetch('{{ url_for("student_task_run", work_id=work.id, task_id=task.id) }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: q.toString()
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      var html = '';
+      html += '<div class="term-cmd"><span class="term-prompt">$</span> python3 main.py';
+      if (runStdin.value.trim()) html += ' &lt; data.in';
+      html += '</div>';
+      if (runStdin.value.trim()) html += '<div class="term-mut">ввод: ' + esc(runStdin.value) + '</div>';
+      if (d.error) html += '<div class="term-err">' + esc(d.error) + '</div>';
+      else {
+        if (d.stderr) html += '<div class="term-err">' + esc(d.stderr) + '</div>';
+        if (d.stdout) html += '<div class="term-out">' + esc(d.stdout) + '</div>';
+        else html += '<div class="term-mut">(пустой вывод)</div>';
+        var code = d.status_id === 3 ? '0' : d.status_id === 5 ? '124' : '1';
+        html += '<div class="term-mut">exit: ' + code + ' · ' + d.elapsed + ' c</div>';
+        if (d.status_id === 5) html += '<div class="term-err">превышено время выполнения</div>';
+        else if (d.status_id !== 3) html += '<div class="term-err">процесс завершился с ошибкой</div>';
+      }
+      html += '<span class="term-cursor"></span>';
+      runOut.innerHTML = html;
+      runOut.scrollTop = runOut.scrollHeight;
+    }).catch(function (err) {
+      runOut.innerHTML = '<div class="term-err">' + esc(String(err)) + '</div><span class="term-cursor"></span>';
+    }).finally(function () {
+      runBtn.disabled = false;
+      runBtn.textContent = 'Запустить';
+    });
   });
 })();
 </script>

@@ -10,7 +10,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import get_db, init_db
-from offline_judge import JudgeUnavailable, check_code
+from offline_judge import JudgeUnavailable, check_code, run_code
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -295,6 +295,25 @@ def student_task(work_id, task_id):
         submission_tests=submission_tests,
         attempt_count=attempt_count,
     )
+
+
+@app.route("/student/works/<int:work_id>/tasks/<int:task_id>/run", methods=["POST"])
+@login_required
+@role_required("student")
+def student_task_run(work_id, task_id):
+    user = get_user()
+    db = get_db()
+    work = db.execute("SELECT id FROM works WHERE id = ?", (work_id,)).fetchone()
+    task = db.execute("SELECT id FROM tasks WHERE id = ? AND work_id = ?", (task_id, work_id)).fetchone()
+    visible = work is not None and task is not None and is_work_visible(db, user["login"], work_id)
+    db.close()
+    if not visible:
+        return {"error": "Задача не найдена"}, 404
+    code = request.form.get("code", "")
+    stdin = request.form.get("stdin", "")
+    if not code.strip():
+        return {"error": "Пустой код"}, 400
+    return run_code(code, stdin)
 
 
 @app.route("/student/works/<int:work_id>/tasks/<int:task_id>/submit", methods=["POST"])
