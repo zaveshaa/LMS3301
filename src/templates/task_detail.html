@@ -58,44 +58,41 @@
 
       {% if submission_tests %}
       {% set passed_count = submission_tests | selectattr('passed') | list | length %}
-      <div class="term" id="submit-term">
-        <div class="term-bar">
-          <span class="term-dots"><i></i><i></i><i></i></span>
-          <span class="term-title">проверка — {{ task.title }}</span>
-          <span style="margin-left:auto; color:{{ '#57d278' if passed_count == submission_tests | length else '#ff6b62' }};">
-            {{ passed_count }} / {{ submission_tests | length }}
-          </span>
-        </div>
-        <div class="term-body">
-          {% for st in submission_tests %}
-          <div class="term-cmd"><span class="term-prompt">$</span> python3 main.py &lt; test{{ loop.index }}.in</div>
-          {% if st.input_data %}
-          <div class="term-mut">ввод: {{ st.input_data }}</div>
-          {% endif %}
-          {% if st.passed %}
-          <div class="term-ok">✓ PASS</div>
-          {% else %}
-          {% if st.error %}
-          <div class="term-err">{{ st.error }}</div>
-          {% endif %}
-          <div class="term-mut">ожидалось: <span class="term-out">{{ st.output_data }}</span></div>
-          <div class="term-mut">получено:  <span class="term-out">{{ st.actual_output if st.actual_output else '(пусто)' }}</span></div>
-          <div class="term-err">✗ FAIL</div>
-          {% endif %}
-          {% endfor %}
-          <span class="term-cursor"></span>
-        </div>
+      <div class="verdict-summary">
+        <span class="status-badge {{ 'status-ok' if passed_count == submission_tests | length else 'status-error' }}">
+          {{ 'ЗАЧТЕНО' if passed_count == submission_tests | length else 'НЕ ЗАЧТЕНО' }}
+        </span>
+        <span class="v-meta">Пройдено {{ passed_count }} из {{ submission_tests | length }} тестов</span>
       </div>
+      <table class="verdict-tests">
+        <tr>
+          <th>#</th>
+          <th>Вердикт</th>
+          <th>Ожидалось</th>
+          <th>Получено</th>
+          <th>Причина</th>
+        </tr>
+        {% for st in submission_tests %}
+        <tr class="{{ 'row-ok' if st.passed else 'row-err' }}">
+          <td class="t-num">{{ loop.index }}</td>
+          <td class="{{ 'v-ok' if st.passed else 'v-err' }}">
+            {% if st.passed %}OK
+            {% elif st.error.startswith('Превышено') %}TLE
+            {% elif st.error.startswith('Ошибка') %}RE
+            {% else %}WA{% endif %}
+          </td>
+          <td><pre>{{ st.output_data }}</pre></td>
+          <td><pre>{{ st.actual_output if st.actual_output else '(пусто)' }}</pre></td>
+          <td class="tiny">
+            {% if not st.passed and (st.error.startswith('Превышено') or st.error.startswith('Ошибка')) %}{{ st.error }}{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
       {% elif submission %}
-      <div class="term">
-        <div class="term-bar">
-          <span class="term-dots"><i></i><i></i><i></i></span>
-          <span class="term-title">проверка — {{ task.title }}</span>
-        </div>
-        <div class="term-body">
-          <div class="term-mut">(детализация по тестам ещё не сохранена)</div>
-          <span class="term-cursor"></span>
-        </div>
+      <div class="verdict-summary">
+        <span class="status-badge status-{{ submission.status }}">{{ status_label[submission.status] }}</span>
+        <span class="v-meta">детализация по тестам ещё не сохранена</span>
       </div>
       {% endif %}
     </div>
@@ -103,17 +100,16 @@
 </div>
 
 <div class="card">
-  <h2>Консоль</h2>
-  <div class="term-hint">Запустите решение на своих входных данных, не отправляя его на проверку.</div>
-  <div class="term" id="run-term">
-    <div class="term-bar">
-      <span class="term-dots"><i></i><i></i><i></i></span>
-      <span class="term-title">python3 main.py — локальный запуск</span>
-    </div>
-    <div class="term-body" id="run-out"><span class="term-cursor"></span></div>
-    <div class="term-input">
-      <textarea id="run-stdin" rows="3" spellcheck="false" placeholder="входные данные (stdin) для программы…"></textarea>
-      <button class="term-btn" id="run-btn" type="button">Запустить</button>
+  <h2>Запуск</h2>
+  <div class="run-stdin-label">Входные данные (stdin)</div>
+  <textarea class="run-stdin" id="run-stdin" spellcheck="false" placeholder="введите данные, например:&#10;5&#10;1 2 3 4 5"></textarea>
+  <div class="solution-actions">
+    <button class="btn btn-sm" id="run-btn" type="button">Запустить</button>
+  </div>
+  <div class="run-output" id="run-term" style="margin-top:12px;">
+    <div class="run-bar">результат</div>
+    <div class="run-body">
+      <div class="run-empty">— вывод появится здесь —</div>
     </div>
   </div>
 </div>
@@ -148,12 +144,12 @@
     return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   var runBtn = document.getElementById('run-btn');
-  var runOut = document.getElementById('run-out');
+  var runBody = document.getElementById('run-term').querySelector('.run-body');
   var runStdin = document.getElementById('run-stdin');
   runBtn.addEventListener('click', function () {
     runBtn.disabled = true;
     runBtn.textContent = 'Запуск…';
-    runOut.textContent = '';
+    runBody.innerHTML = '<span class="run-empty">выполнение…</span>';
     var q = new URLSearchParams();
     q.set('code', ta.value);
     q.set('stdin', runStdin.value);
@@ -163,25 +159,20 @@
       body: q.toString()
     }).then(function (r) { return r.json(); }).then(function (d) {
       var html = '';
-      html += '<div class="term-cmd"><span class="term-prompt">$</span> python3 main.py';
-      if (runStdin.value.trim()) html += ' &lt; data.in';
-      html += '</div>';
-      if (runStdin.value.trim()) html += '<div class="term-mut">ввод: ' + esc(runStdin.value) + '</div>';
-      if (d.error) html += '<div class="term-err">' + esc(d.error) + '</div>';
+      if (d.error) html += '<div class="run-stderr"><pre>' + esc(d.error) + '</pre></div>';
       else {
-        if (d.stderr) html += '<div class="term-err">' + esc(d.stderr) + '</div>';
-        if (d.stdout) html += '<div class="term-out">' + esc(d.stdout) + '</div>';
-        else html += '<div class="term-mut">(пустой вывод)</div>';
-        var code = d.status_id === 3 ? '0' : d.status_id === 5 ? '124' : '1';
-        html += '<div class="term-mut">exit: ' + code + ' · ' + d.elapsed + ' c</div>';
-        if (d.status_id === 5) html += '<div class="term-err">превышено время выполнения</div>';
-        else if (d.status_id !== 3) html += '<div class="term-err">процесс завершился с ошибкой</div>';
+        if (d.stderr) html += '<div class="run-stderr"><pre>' + esc(d.stderr) + '</pre></div>';
+        if (d.stdout) html += '<pre>' + esc(d.stdout) + '</pre>';
+        else html += '<span class="run-empty">(пустой вывод)</span>';
+        html += '<div class="run-meta">';
+        if (d.status_id === 3) html += 'ОК';
+        else if (d.status_id === 5) html += 'Превышено время выполнения';
+        else html += 'Ошибка выполнения (exit 1)';
+        html += ' · ' + d.elapsed + ' с</div>';
       }
-      html += '<span class="term-cursor"></span>';
-      runOut.innerHTML = html;
-      runOut.scrollTop = runOut.scrollHeight;
+      runBody.innerHTML = html;
     }).catch(function (err) {
-      runOut.innerHTML = '<div class="term-err">' + esc(String(err)) + '</div><span class="term-cursor"></span>';
+      runBody.innerHTML = '<div class="run-stderr"><pre>' + esc(String(err)) + '</pre></div>';
     }).finally(function () {
       runBtn.disabled = false;
       runBtn.textContent = 'Запустить';
