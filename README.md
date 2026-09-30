@@ -1,69 +1,69 @@
 # LMS3301
 
-Небольшая учебная LMS для курса основ программирования. Студент получает лекции и практические работы, отправляет решения задач, система прогоняет их по тестам и показывает результат по каждому тесту. Преподаватель ведёт работы, задачи, тесты и студентов.
+A small LMS for an introductory programming course. Students get lectures and practical assignments, submit solutions, and the system runs them against tests and reports per-test results. The teacher manages works, tasks, tests, and students.
 
-Стек: Python 3, Flask, SQLite. Фронтенд — серверные шаблоны Jinja2, без сборки и внешних зависимостей.
+Stack: Python 3, Flask, SQLite. Frontend is server-rendered Jinja2 templates, no build step and no external dependencies.
 
-## Возможности
+## Features
 
-Студент:
+Student:
 
-- список доступных работ (видимость ограничена группой);
-- лекции и практические задания;
-- редактирование кода в браузере, черновик сохраняется в localStorage;
-- отправка решения — автоматический прогон по тестам, вердикт по каждому тесту (OK/WA/TLE/RE);
-- локальный запуск решения на своих входных данных без отправки на проверку.
+- list of visible works (visibility limited by group);
+- lectures and practical assignments;
+- in-browser code editing, draft persisted in localStorage;
+- submission — automatic test run, per-test verdict (OK/WA/TLE/RE);
+- local run of the solution on custom input without submitting.
 
-Преподаватель (admin):
+Teacher (admin):
 
-- работы, задачи, тесты — добавление, редактирование, массовый ввод тестов;
-- студенты по группам, создание и сброс паролей (пароль выдаётся один раз);
-- оценки решений, ручная проверка, перезапуск автоматической проверки;
-- сводка по всем решениям с фильтром по статусу и поиском.
+- works, tasks, tests — add, edit, bulk test import;
+- students by group, account creation and password reset (password shown once);
+- grading, manual review, re-running automatic checks;
+- overview of all submissions with status filter and search.
 
-## Проверка решений
+## Verdicts
 
-Код студента выполняется в изолированном процессе:
+Student code runs in an isolated process:
 
-- macOS: запуск через `sandbox-exec` с профилем, запрещающим сеть, чтение пользовательских файлов и порождение процессов; запись разрешена только во временную директорию судьи;
-- ограничения ресурсов: память 256 МБ, время 5 с, максимум 8 процессов, 64 открытых файла, файл вывода до 1 МБ;
-- интерпретатор запускается с флагами `-I -B` (изолированный режим, без `.pyc`).
+- macOS: launched via `sandbox-exec` with a profile that denies network, reading user files, and spawning processes; writes are allowed only into the judge's temp directory;
+- resource limits: 256 MB memory, 5 s time, max 8 processes, 64 open file descriptors, 1 MB output file;
+- interpreter runs with `-I -B` flags (isolated mode, no `.pyc`).
 
-Если `sandbox-exec` недоступен на платформе, судья работает без песочницы и решения уходят в статус ручной проверки — автоматическая проверка на таких системах не обещается. Ожидаемый вывод сравнивается с фактическим после нормализации концов строк и хвостовых пробелов.
+If `sandbox-exec` is unavailable on the platform, the judge runs without a sandbox and solutions go to manual review — automatic checking on such systems is not guaranteed. Expected output is compared to actual after normalizing line endings and trailing whitespace.
 
-## Запуск
+## Run
 
 ```bash
 pip install flask
 python3 src/app.py
 ```
 
-При первом запуске создаётся `src/lms.db` с демонстрационными работами и тестами. Сервер слушает `http://localhost:5000` (debug-режим включён).
+On first start, `src/lms.db` is created with demo works and tests. The server listens on `http://localhost:5000` (debug mode is enabled).
 
-Демо-доступы:
+Demo logins:
 
-- преподаватель: `admin` / `admin`
-- студент: `5952_1` / `5952_1`
+- teacher: `admin` / `admin`
+- student: `5952_1` / `5952_1`
 
-Логин студента вида `группа_номер`, например `101_5` — группа определяется по префиксу до первого `_`.
+Student login format is `group_number`, e.g. `101_5` — the group is derived from the prefix before the first underscore.
 
-## Структура
+## Layout
 
 ```
 src/
-  app.py              маршруты, права доступа, обработка отправок
-  db.py               схема, миграции к схеме, демо-данные
-  offline_judge.py    выполнение кода, песочница, вердикты
-  sys_console.py      системная консоль (процессы, нагрузка)
-  templates/          шаблоны Jinja2
+  app.py              routes, access control, submission handling
+  db.py               schema, migrations, demo data
+  offline_judge.py    code execution, sandbox, verdicts
+  sys_console.py      system console (processes, load)
+  templates/          Jinja2 templates
 ```
 
-## База данных
+## Database
 
-SQLite, файл `src/lms.db` (в `.gitignore`). Схема пересоздаётся и мигрирует при старте (`init_db`). Основные таблицы: `users`, `works`, `tasks`, `tests`, `submissions`, `submission_tests`, `work_groups`.
+SQLite, file `src/lms.db` (gitignored). The schema is created and migrated on startup (`init_db`). Main tables: `users`, `works`, `tasks`, `tests`, `submissions`, `submission_tests`, `work_groups`.
 
-Пароли хранятся только в виде хэша (werkzeug `generate_password_hash`). Открытый пароль показывается один раз в момент создания студента или сброса и не сохраняется.
+Passwords are stored only as hashes (werkzeug `generate_password_hash`). The plaintext password is shown once at account creation or reset and is not stored.
 
-## Лицензия
+## License
 
-MIT, см. `LICENSE`.
+MIT, see `LICENSE`.
