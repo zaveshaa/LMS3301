@@ -107,18 +107,24 @@ def init_db():
     if db.execute("SELECT COUNT(*) FROM works").fetchone()[0] == 0:
         _seed_demo(db)
     elif (
-        db.execute("SELECT COUNT(*) FROM submissions").fetchone()[0] == 0
-        and db.execute("SELECT COUNT(*) FROM tasks WHERE title = 'Сумма элементов массива'").fetchone()[0] > 0
+        db.execute("SELECT COUNT(*) FROM tasks WHERE title = 'Разворот числа'").fetchone()[0] == 0
+        and db.execute("SELECT COUNT(*) FROM works WHERE title LIKE 'Практика%'").fetchone()[0] > 0
     ):
-        db.execute("DELETE FROM submission_tests")
-        db.execute("DELETE FROM work_groups")
-        db.execute("DELETE FROM tests")
-        db.execute("DELETE FROM tasks")
-        db.execute("DELETE FROM works")
+        _reset_demo(db)
         _seed_demo(db)
 
     db.commit()
     db.close()
+
+
+def _reset_demo(db):
+    db.execute("DELETE FROM submission_tests")
+    db.execute("DELETE FROM submissions")
+    db.execute("DELETE FROM work_groups")
+    db.execute("DELETE FROM tests")
+    db.execute("DELETE FROM tasks")
+    db.execute("DELETE FROM works WHERE title LIKE 'Лекция%' OR title LIKE 'Практика%'")
+    db.execute("DELETE FROM works WHERE type = 'lecture' OR type = 'practical'")
 
 
 def _seed_demo(db):
@@ -153,6 +159,111 @@ def _seed_demo(db):
         add_practical(p["title"], p["description"], p["tasks"])
     for title, description, content in LECTURES:
         add_lecture(title, description, content)
+    _seed_demo_submissions(db, now)
+
+
+def _seed_demo_submissions(db, now):
+    student = db.execute("SELECT id FROM users WHERE login = '5952_1'").fetchone()
+    if student is None:
+        return
+    student_id = student["id"]
+
+    def task_ids(title):
+        rows = db.execute(
+            "SELECT t.id FROM tasks t JOIN works w ON w.id = t.work_id "
+            "WHERE w.type = 'practical' AND t.title = ? ORDER BY t.id",
+            (title,),
+        ).fetchall()
+        return [r["id"] for r in rows]
+
+    def tests_of(task_id):
+        return [
+            r["id"]
+            for r in db.execute(
+                "SELECT id FROM tests WHERE task_id = ? ORDER BY id", (task_id,)
+            )
+        ]
+
+    def add_sub(task_id, code, status, comment, results):
+        cur = db.execute(
+            "INSERT INTO submissions (task_id, user_id, code, status, comment, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (task_id, student_id, code, status, comment, now),
+        )
+        sub_id = cur.lastrowid
+        for test_id, (passed, actual, error) in zip(tests_of(task_id), results):
+            db.execute(
+                "INSERT INTO submission_tests (submission_id, test_id, passed, actual_output, error) VALUES (?, ?, ?, ?, ?)",
+                (sub_id, test_id, 1 if passed else 0, actual, error),
+            )
+
+    sum_task = task_ids("Сумма цифр числа")
+    parity_task = task_ids("Чётность числа")
+    reverse_task = task_ids("Разворот числа")
+    vowels_task = task_ids("Подсчёт гласных")
+
+    if sum_task:
+        add_sub(
+            sum_task[0],
+            "n = int(input())\ns = 0\nwhile n > 0:\n    s += 1\n    n //= 10\nprint(s)",
+            "error",
+            "Пройдено 2 из 6 тестов. Не пройден тест 1: Вывод не совпадает; вывод: 3",
+            [
+                (0, "3", "Вывод не совпадает"),
+                (1, "0", ""),
+                (0, "3", "Вывод не совпадает"),
+                (0, "4", "Вывод не совпадает"),
+                (0, "9", "Вывод не совпадает"),
+                (1, "12", ""),
+            ],
+        )
+        add_sub(
+            sum_task[0],
+            "print(sum(map(int, input())))",
+            "ok",
+            "Все 6 тестов пройдено",
+            [(1, "", "")] * 6,
+        )
+
+    if parity_task:
+        add_sub(
+            parity_task[0],
+            "n = int(input())\nprint('ЧЁТНОЕ' if n % 2 == 0 and n != 0 else 'НЕЧЁТНОЕ')",
+            "error",
+            "Пройдено 5 из 6 тестов. Не пройден тест 3: Вывод не совпадает; вывод: НЕЧЁТНОЕ",
+            [
+                (1, "ЧЁТНОЕ", ""),
+                (1, "НЕЧЁТНОЕ", ""),
+                (0, "НЕЧЁТНОЕ", "Вывод не совпадает"),
+                (1, "НЕЧЁТНОЕ", ""),
+                (1, "ЧЁТНОЕ", ""),
+                (1, "НЕЧЁТНОЕ", ""),
+            ],
+        )
+
+    if reverse_task:
+        add_sub(
+            reverse_task[0],
+            "n = int(input())\nrev = 0\nwhile n > 0:\n    rev = rev * 10 + n % 10\nprint(rev)",
+            "error",
+            "Пройдено 0 из 5 тестов. Не пройден тест 1: Превышено время выполнения",
+            [(0, "", "Превышено время выполнения")] * 5,
+        )
+
+    if vowels_task:
+        add_sub(
+            vowels_task[0],
+            "word = input()\nvowels = 'аеёиоуыэюя'\ncount = sum(1 for c in word if c in vowels)\nprint(100 // (len(word) - count))",
+            "error",
+            "Пройдено 0 из 6 тестов. Не пройден тест 1: Ошибка выполнения: ZeroDivisionError: integer division or modulo by zero",
+            [
+                (0, "", "Ошибка выполнения: ZeroDivisionError: integer division or modulo by zero"),
+                (0, "50", "Вывод не совпадает"),
+                (0, "50", "Вывод не совпадает"),
+                (0, "33", "Вывод не совпадает"),
+                (0, "33", "Вывод не совпадает"),
+                (0, "50", "Вывод не совпадает"),
+            ],
+        )
 
 
 PRACTICALS = [
@@ -172,6 +283,47 @@ PRACTICALS = [
                     ("1000", "1"),
                     ("987654321", "45"),
                     ("111111111111", "12"),
+                ],
+            },
+            {
+                "title": "Чётность числа",
+                "statement": "Дано целое число. Выведите «ЧЁТНОЕ», если оно чётное, и «НЕЧЁТНОЕ» в противном случае.\nНоль считается чётным числом.",
+                "input_format": "Одно целое число.",
+                "output_format": "«ЧЁТНОЕ» или «НЕЧЁТНОЕ».",
+                "tests": [
+                    ("4", "ЧЁТНОЕ"),
+                    ("7", "НЕЧЁТНОЕ"),
+                    ("0", "ЧЁТНОЕ"),
+                    ("13", "НЕЧЁТНОЕ"),
+                    ("100", "ЧЁТНОЕ"),
+                    ("-3", "НЕЧЁТНОЕ"),
+                ],
+            },
+            {
+                "title": "Разворот числа",
+                "statement": "Дано целое неотрицательное число. Выведите число, составленное из его цифр в обратном порядке.\nНапример, для числа 120 ответ — 21.",
+                "input_format": "Одно целое неотрицательное число.",
+                "output_format": "Одно целое число.",
+                "tests": [
+                    ("123", "321"),
+                    ("120", "21"),
+                    ("1000", "1"),
+                    ("7", "7"),
+                    ("9009", "9009"),
+                ],
+            },
+            {
+                "title": "Подсчёт гласных",
+                "statement": "Дано слово из строчных русских букв. Подсчитайте, сколько в нём гласных букв.\nГласные: а, е, ё, и, о, у, ы, э, ю, я.",
+                "input_format": "Одно слово.",
+                "output_format": "Одно целое число — количество гласных.",
+                "tests": [
+                    ("аааа", "4"),
+                    ("дом", "1"),
+                    ("окно", "2"),
+                    ("школа", "2"),
+                    ("ключ", "1"),
+                    ("сова", "2"),
                 ],
             },
         ],

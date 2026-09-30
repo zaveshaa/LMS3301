@@ -348,11 +348,12 @@ def student_submit(work_id, task_id):
             status, comment = "ok", "Все %d тестов пройдено" % total
         else:
             first_bad = next(r for r in results if not r["passed"])
+            first_bad_num = next(i for i, r in enumerate(results, 1) if not r["passed"])
             status = "error"
-            comment = ("Пройдено %d из %d тестов. " % (passed, total)) + (
-                (first_bad.get("error") or "Ошибка выполнения").strip()
-                + ("; вывод: " + first_bad["actual"][:60] if first_bad.get("actual") else "")
-            )[:200]
+            detail = (first_bad.get("error") or "Ошибка выполнения").strip()
+            if first_bad.get("actual"):
+                detail += "; вывод: " + first_bad["actual"][:60]
+            comment = ("Пройдено %d из %d тестов. Не пройден тест %d: " % (passed, total, first_bad_num) + detail)[:200]
         db.execute(
             "INSERT INTO submissions (task_id, user_id, code, status, comment, created_at) VALUES (?, ?, ?, ?, ?, ?)",
             (task_id, user["id"], code, status, comment, datetime.now().strftime("%d.%m %H:%M")),
@@ -967,10 +968,12 @@ def admin_submission_recheck(sub_id):
         status, comment = "ok", "Все %d тестов пройдено" % total
     else:
         first_bad = next(r for r in results if not r["passed"])
-        status, comment = "error", ("Пройдено %d из %d тестов. " % (passed, total)) + (
-            (first_bad.get("error") or "Ошибка выполнения").strip()
-            + ("; вывод: " + first_bad["actual"][:60] if first_bad.get("actual") else "")
-        )[:200]
+        first_bad_num = next(i for i, r in enumerate(results, 1) if not r["passed"])
+        status = "error"
+        detail = (first_bad.get("error") or "Ошибка выполнения").strip()
+        if first_bad.get("actual"):
+            detail += "; вывод: " + first_bad["actual"][:60]
+        comment = ("Пройдено %d из %d тестов. Не пройден тест %d: " % (passed, total, first_bad_num) + detail)[:200]
     db.execute("DELETE FROM submission_tests WHERE submission_id = ?", (sub_id,))
     db.execute(
         "UPDATE submissions SET status = ?, comment = ? WHERE id = ?",
