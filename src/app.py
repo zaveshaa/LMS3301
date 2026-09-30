@@ -724,8 +724,8 @@ def admin_student_new():
             else:
                 password = generate_password()
                 db.execute(
-                    "INSERT INTO users (login, password_hash, role, full_name, password_show) VALUES (?, ?, 'student', ?, ?)",
-                    (login_val, generate_password_hash(password), full_name, password),
+                    "INSERT INTO users (login, password_hash, role, full_name) VALUES (?, ?, 'student', ?)",
+                    (login_val, generate_password_hash(password), full_name),
                 )
                 db.commit()
                 flash(f"Студент «{login_val}» создан. Пароль: {password}", "success")
@@ -773,8 +773,8 @@ def admin_student_reset(user_id):
     else:
         password = generate_password()
         db.execute(
-            "UPDATE users SET password_hash = ?, password_show = ? WHERE id = ?",
-            (generate_password_hash(password), password, user_id),
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (generate_password_hash(password), user_id),
         )
         db.commit()
         flash(f"Новый пароль студента «{student['login']}»: {password}", "success")

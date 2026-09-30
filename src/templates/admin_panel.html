@@ -284,12 +284,11 @@
       <span class="count-badge">{{ students|length }} чел.</span>
     </div>
     <table class="admin-table">
-      <tr><th style="width:34%;">ФИО</th><th>Логин</th><th style="width:22%;">Пароль</th><th></th></tr>
+      <tr><th style="width:34%;">ФИО</th><th>Логин</th><th></th></tr>
       {% for s in students %}
       <tr data-si="{{ s.id }}" data-needle="{{ s.login }} {{ s.full_name or '' }} группа {{ group }}">
         <td>{{ s.full_name or '—' }}</td>
         <td class="mono-cell">{{ s.login }}</td>
-        <td class="mono-cell">{{ s.password_show }}</td>
         <td style="white-space:nowrap; text-align:right;">
           <a class="link-act" href="{{ url_for('admin_student_profile', user_id=s.id) }}">Профиль</a>
           <button class="link-act" type="button" onclick="toggleStudentEdit({{ s.id }})" style="margin-left:12px;">Изменить</button>
@@ -304,12 +303,11 @@
         </td>
       </tr>
       <tr id="student-edit-{{ s.id }}" hidden>
-        <td colspan="4">
+        <td colspan="3">
           <form method="post" action="{{ url_for('admin_student_edit', user_id=s.id) }}">
             <div class="row2">
               <div><label>Логин</label><input type="text" name="login" value="{{ s.login }}"></div>
               <div style="flex:1.4;"><label>ФИО</label><input type="text" name="full_name" value="{{ s.full_name }}"></div>
-              <div><label>Текущий пароль</label><input type="text" value="{{ s.password_show }}" readonly></div>
             </div>
             <div class="btn-row">
               <button class="btn btn-outline" type="submit">Сохранить</button>

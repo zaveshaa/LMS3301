@@ -22,8 +22,7 @@ def init_db():
             login TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL DEFAULT 'student',
-            full_name TEXT NOT NULL DEFAULT '',
-            password_show TEXT NOT NULL DEFAULT ''
+            full_name TEXT NOT NULL DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS works (
@@ -82,8 +81,8 @@ def init_db():
     cols = {r["name"] for r in db.execute("PRAGMA table_info(users)").fetchall()}
     if "full_name" not in cols:
         db.execute("ALTER TABLE users ADD COLUMN full_name TEXT NOT NULL DEFAULT ''")
-    if "password_show" not in cols:
-        db.execute("ALTER TABLE users ADD COLUMN password_show TEXT NOT NULL DEFAULT ''")
+    if "password_show" in cols:
+        db.execute("ALTER TABLE users DROP COLUMN password_show")
 
     tcols = {r["name"] for r in db.execute("PRAGMA table_info(tasks)").fetchall()}
     if "score" in tcols:
@@ -101,13 +100,8 @@ def init_db():
             exists = db.execute("SELECT id FROM users WHERE login = ?", (login,)).fetchone()
             if not exists:
                 db.execute(
-                    "INSERT INTO users (login, password_hash, role, password_show) VALUES (?, ?, ?, ?)",
-                    (login, pwd_hash, role, login),
-                )
-            else:
-                db.execute(
-                    "UPDATE users SET password_show = ? WHERE login = ?",
-                    (login, login),
+                    "INSERT INTO users (login, password_hash, role) VALUES (?, ?, ?)",
+                    (login, pwd_hash, role),
                 )
 
     if db.execute("SELECT COUNT(*) FROM works").fetchone()[0] == 0:
