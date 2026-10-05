@@ -65,6 +65,7 @@
         <div class="submit-comment">{{ s.comment }}</div>
         {% endif %}
         <form method="post" action="{{ url_for('admin_submission_grade', sub_id=s.id) }}" class="grade-row">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <label style="margin:0;">Статус
             <select name="status">
               <option value="pending" {% if s.status == 'pending' %}selected{% endif %}>На проверке</option>

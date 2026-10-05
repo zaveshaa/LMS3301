@@ -1,25 +1,123 @@
+import hmac
 import html
 import os
 import re
 import secrets
 import string
-from datetime import datetime
+import threading
+import time
+from datetime import datetime, timezone
 from functools import wraps
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import get_db, init_db
-from offline_judge import JudgeUnavailable, check_code, run_code
+from offline_judge import JudgeUnavailable, check_code, judge_status, run_code
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
-app.secret_key = "pytestlms-dev-secret-key"
+app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
+
+
+def _load_secret_key():
+    env_key = os.environ.get("LMS_SECRET_KEY")
+    if env_key:
+        return env_key
+    key_file = os.path.join(BASE_DIR, ".secret_key")
+    if os.path.exists(key_file):
+        with open(key_file, "r", encoding="utf-8") as f:
+            key = f.read().strip()
+        if key:
+            return key
+    key = secrets.token_hex(32)
+    with open(key_file, "w", encoding="utf-8") as f:
+        f.write(key)
+    os.chmod(key_file, 0o600)
+    return key
+
+
+app.secret_key = _load_secret_key()
 
 ROLE_LABELS = {"admin": "Преподаватель", "student": "Студент"}
 TYPE_LABELS = {"lecture": "Лекция", "practical": "Практика"}
 STATUS_LABELS = {"pending": "На проверке", "ok": "Зачтено", "error": "Не зачтено"}
+
+LOGIN_ATTEMPT_LIMIT = 10
+LOGIN_ATTEMPT_WINDOW = 300
+SUBMIT_COOLDOWN = 2.0
+RUN_LIMIT = 15
+RUN_WINDOW = 60.0
+
+_attempts = {}
+_rate = {}
+_rate_lock = threading.Lock()
+
+
+def _now():
+    return time.monotonic()
+
+
+def _prune_locked(store, window, key):
+    now = _now()
+    events = [t for t in store.get(key, []) if now - t < window]
+    if events:
+        store[key] = events
+    else:
+        store.pop(key, None)
+    return events
+
+
+def check_login_rate(ip):
+    with _rate_lock:
+        events = _prune_locked(_attempts, LOGIN_ATTEMPT_WINDOW, ip)
+        if len(events) >= LOGIN_ATTEMPT_LIMIT:
+            return False
+        _attempts.setdefault(ip, []).append(_now())
+    return True
+
+
+def take_rate_slot(key, limit, window):
+    with _rate_lock:
+        events = _prune_locked(_rate, window, key)
+        if len(events) >= limit:
+            return False
+        _rate.setdefault(key, []).append(_now())
+    return True
+
+
+def take_cooldown(key, cooldown):
+    with _rate_lock:
+        last = _rate.get("cooldown:" + key)
+        if last is not None and _now() - last < cooldown:
+            return False
+        _rate["cooldown:" + key] = _now()
+    return True
+
+
+def now_iso():
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def csrf_token():
+    if "_csrf" not in session:
+        session["_csrf"] = secrets.token_urlsafe(32)
+    return session["_csrf"]
+
+
+app.jinja_env.globals["csrf_token"] = csrf_token
+
+
+@app.before_request
+def csrf_protect():
+    if request.method != "POST":
+        return None
+    sent = request.form.get("_csrf") or request.headers.get("X-CSRF-Token", "")
+    stored = session.get("_csrf", "")
+    if not stored or not hmac.compare_digest(sent, stored):
+        abort(400, "Недействительный CSRF-токен")
+    return None
 
 VISIBLE_WORKS_SQL = """
 SELECT w.*,
@@ -190,6 +288,10 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
+        ip = request.remote_addr or "?"
+        if not check_login_rate(ip):
+            flash("Слишком много попыток входа. Подождите 5 минут", "error")
+            return render_template("login.html")
         login_val = request.form["login"].strip()
         password = request.form["password"]
         db = get_db()
@@ -211,7 +313,7 @@ def home():
     return redirect(url_for("student_cabinet"))
 
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
     return redirect(url_for("login"))
@@ -268,7 +370,10 @@ def student_task(work_id, task_id):
         db.close()
         flash("Задача не найдена", "error")
         return redirect(url_for("student_cabinet"))
-    tests = db.execute("SELECT * FROM tests WHERE task_id = ?", (task_id,)).fetchall()
+    tests = db.execute(
+        "SELECT id, input_data, output_data FROM tests WHERE task_id = ? ORDER BY id LIMIT 2",
+        (task_id,),
+    ).fetchall()
     submission = db.execute(
         "SELECT * FROM submissions WHERE task_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
         (task_id, user["id"]),
@@ -276,9 +381,8 @@ def student_task(work_id, task_id):
     submission_tests = []
     if submission is not None:
         submission_tests = db.execute(
-            """SELECT st.*, t.input_data, t.output_data
-               FROM submission_tests st JOIN tests t ON t.id = st.test_id
-               WHERE st.submission_id = ? ORDER BY st.id""",
+            """SELECT st.id, st.passed, st.actual_output, st.error
+               FROM submission_tests st WHERE st.submission_id = ? ORDER BY st.id""",
             (submission["id"],),
         ).fetchall()
     attempt_count = db.execute(
@@ -309,11 +413,16 @@ def student_task_run(work_id, task_id):
     db.close()
     if not visible:
         return {"error": "Задача не найдена"}, 404
+    if not take_rate_slot("run:%d" % user["id"], RUN_LIMIT, RUN_WINDOW):
+        return {"error": "Слишком много запусков. Подождите минуту"}, 429
     code = request.form.get("code", "")
     stdin = request.form.get("stdin", "")
     if not code.strip():
         return {"error": "Пустой код"}, 400
-    return run_code(code, stdin)
+    try:
+        return run_code(code, stdin)
+    except JudgeUnavailable as exc:
+        return {"error": str(exc)}, 503
 
 
 @app.route("/student/works/<int:work_id>/tasks/<int:task_id>/submit", methods=["POST"])
@@ -333,10 +442,14 @@ def student_submit(work_id, task_id):
         flash("Напишите код, прежде чем отправлять на проверку", "error")
         db.close()
         return redirect(url_for("student_task", work_id=work_id, task_id=task_id))
+    if not take_cooldown("submit:%d:%d" % (user["id"], task_id), SUBMIT_COOLDOWN):
+        flash("Слишком часто. Подождите пару секунд перед следующей отправкой", "error")
+        db.close()
+        return redirect(url_for("student_task", work_id=work_id, task_id=task_id))
     tests = db.execute(
         "SELECT id, input_data, output_data FROM tests WHERE task_id = ? ORDER BY id", (task_id,)
     ).fetchall()
-    now = datetime.now().strftime("%d.%m %H:%M")
+    now = now_iso()
     try:
         judge_ok, results = check_code(code, tests)
     except JudgeUnavailable:
@@ -356,7 +469,7 @@ def student_submit(work_id, task_id):
             comment = ("Пройдено %d из %d тестов. Не пройден тест %d: " % (passed, total, first_bad_num) + detail)[:200]
         db.execute(
             "INSERT INTO submissions (task_id, user_id, code, status, comment, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (task_id, user["id"], code, status, comment, datetime.now().strftime("%d.%m %H:%M")),
+            (task_id, user["id"], code, status, comment, now_iso()),
         )
         sub_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
         for t, r in zip(tests, results):
@@ -420,6 +533,7 @@ def admin_dashboard():
         work_count=work_count,
         task_count=task_count,
         group_count=len(groups),
+        judge=judge_status(),
     )
 
 
@@ -451,7 +565,7 @@ def admin_work_new():
             db = get_db()
             db.execute(
                 "INSERT INTO works (title, type, description, content, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (title, wtype, description, content, get_user()["id"], datetime.now().strftime("%d.%m %H:%M")),
+                (title, wtype, description, content, get_user()["id"], now_iso()),
             )
             db.commit()
             work_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -990,6 +1104,31 @@ def admin_submission_recheck(sub_id):
     return redirect(url_for("admin_list_submissions", _anchor="sub-%d" % sub_id))
 
 
+init_db()
+
+
+@app.cli.command("create-admin")
+def create_admin():
+    login = os.environ.get("LMS_ADMIN_LOGIN", "admin")
+    password = os.environ.get("LMS_ADMIN_PASSWORD")
+    if not password:
+        password = generate_password()
+    db = get_db()
+    if db.execute("SELECT id FROM users WHERE login = ?", (login,)).fetchone():
+        print("Пользователь %s уже существует" % login)
+    else:
+        db.execute(
+            "INSERT INTO users (login, password_hash, role, full_name) VALUES (?, ?, 'admin', ?)",
+            (login, generate_password_hash(password), "Преподаватель"),
+        )
+        db.commit()
+        print("Создан преподаватель %s, пароль: %s" % (login, password))
+    db.close()
+
+
 if __name__ == "__main__":
-    init_db()
-    app.run(debug=True)
+    app.run(
+        host=os.environ.get("LMS_HOST", "127.0.0.1"),
+        port=int(os.environ.get("LMS_PORT", "5000")),
+        debug=os.environ.get("LMS_DEBUG", "0") == "1",
+    )

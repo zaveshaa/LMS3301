@@ -49,6 +49,7 @@
       {% endif %}
       <form method="post" action="{{ url_for('student_submit', work_id=work.id, task_id=task.id) }}"
             onsubmit="return confirm('Отправить решение на проверку?');">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <textarea class="code-editor" id="code" name="code" spellcheck="false">{{ submission.code if submission else '' }}</textarea>
         <div class="solution-actions">
           <button type="submit" class="btn">Отправить на проверку</button>
@@ -68,7 +69,6 @@
         <tr>
           <th>#</th>
           <th>Вердикт</th>
-          <th>Ожидалось</th>
           <th>Получено</th>
           <th>Причина</th>
         </tr>
@@ -77,14 +77,14 @@
           <td class="t-num">{{ loop.index }}</td>
           <td class="{{ 'v-ok' if st.passed else 'v-err' }}">
             {% if st.passed %}OK
-            {% elif st.error.startswith('Превышено') %}TLE
+            {% elif st.error.startswith('Превышено время') %}TLE
+            {% elif st.error.startswith('Превышен лимит') %}MLE
             {% elif st.error.startswith('Ошибка') %}RE
             {% else %}WA{% endif %}
           </td>
-          <td><pre>{{ st.output_data }}</pre></td>
           <td><pre>{{ st.actual_output if st.actual_output else '(пусто)' }}</pre></td>
           <td class="tiny">
-            {% if not st.passed and (st.error.startswith('Превышено') or st.error.startswith('Ошибка')) %}{{ st.error }}{% endif %}
+            {% if not st.passed %}{{ st.error }}{% endif %}
           </td>
         </tr>
         {% endfor %}
@@ -155,7 +155,10 @@
     q.set('stdin', runStdin.value);
     fetch('{{ url_for("student_task_run", work_id=work.id, task_id=task.id) }}', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRF-Token': '{{ csrf_token() }}'
+      },
       body: q.toString()
     }).then(function (r) { return r.json(); }).then(function (d) {
       var html = '';

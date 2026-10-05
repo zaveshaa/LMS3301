@@ -1,4 +1,6 @@
 __pycache__/
 *.pyc
 src/lms.db
+src/lms.db.*
+src/.secret_key
 .venv/

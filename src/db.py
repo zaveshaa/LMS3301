@@ -1,6 +1,7 @@
 import os
+import secrets
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 
 from werkzeug.security import generate_password_hash
 
@@ -92,43 +93,37 @@ def init_db():
     if "comment" not in scols:
         db.execute("ALTER TABLE submissions ADD COLUMN comment TEXT NOT NULL DEFAULT ''")
 
-    seed_users = [
-        ("admin", generate_password_hash("admin"), "admin"),
-        ("5952_1", generate_password_hash("5952_1"), "student"),
-    ]
-    for login, pwd_hash, role in seed_users:
-            exists = db.execute("SELECT id FROM users WHERE login = ?", (login,)).fetchone()
-            if not exists:
-                db.execute(
-                    "INSERT INTO users (login, password_hash, role) VALUES (?, ?, ?)",
-                    (login, pwd_hash, role),
-                )
-
-    if db.execute("SELECT COUNT(*) FROM works").fetchone()[0] == 0:
-        _seed_demo(db)
-    elif (
-        db.execute("SELECT COUNT(*) FROM tasks WHERE title = 'Разворот числа'").fetchone()[0] == 0
-        and db.execute("SELECT COUNT(*) FROM works WHERE title LIKE 'Практика%'").fetchone()[0] > 0
-    ):
-        _reset_demo(db)
+    _bootstrap_admin(db)
+    if os.environ.get("LMS_DEMO") == "1":
         _seed_demo(db)
 
     db.commit()
     db.close()
 
 
-def _reset_demo(db):
-    db.execute("DELETE FROM submission_tests")
-    db.execute("DELETE FROM submissions")
-    db.execute("DELETE FROM work_groups")
-    db.execute("DELETE FROM tests")
-    db.execute("DELETE FROM tasks")
-    db.execute("DELETE FROM works WHERE title LIKE 'Лекция%' OR title LIKE 'Практика%'")
-    db.execute("DELETE FROM works WHERE type = 'lecture' OR type = 'practical'")
+def _bootstrap_admin(db):
+    if db.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'").fetchone()[0] > 0:
+        return
+    login = os.environ.get("LMS_ADMIN_LOGIN", "admin")
+    if db.execute("SELECT id FROM users WHERE login = ?", (login,)).fetchone():
+        return
+    password = os.environ.get("LMS_ADMIN_PASSWORD") or secrets.token_urlsafe(9)
+    db.execute(
+        "INSERT INTO users (login, password_hash, role, full_name) VALUES (?, ?, 'admin', ?)",
+        (login, generate_password_hash(password), "Преподаватель"),
+    )
+    print("Создан преподаватель %s, пароль: %s" % (login, password), flush=True)
 
 
 def _seed_demo(db):
-    now = datetime.now().strftime("%d.%m %H:%M")
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+    demo_student = os.environ.get("LMS_DEMO_LOGIN", "5952_1")
+    if not db.execute("SELECT id FROM users WHERE login = ?", (demo_student,)).fetchone():
+        db.execute(
+            "INSERT INTO users (login, password_hash, role, full_name) VALUES (?, ?, 'student', ?)",
+            (demo_student, generate_password_hash(demo_student), "Демо-студент"),
+        )
 
     def add_practical(title, description, tasks):
         cur = db.execute(

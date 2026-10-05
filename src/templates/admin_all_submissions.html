@@ -66,6 +66,7 @@
     <pre class="code-view">{{ s.code }}</pre>
   </details>
   <form method="post" class="grade-row" action="{{ url_for('admin_submission_grade', sub_id=s.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <select name="status" id="sub-status-{{ s.id }}">
       <option value="pending" {% if s.status == 'pending' %}selected{% endif %}>На проверке</option>
       <option value="ok" {% if s.status == 'ok' %}selected{% endif %}>Зачтено</option>
@@ -75,6 +76,7 @@
     <button class="btn btn-sm" type="submit">Сохранить</button>
   </form>
   <form method="post" class="grade-row" action="{{ url_for('admin_submission_recheck', sub_id=s.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <button class="btn btn-sm btn-outline" type="submit">Перепроверить (офлайн-судья)</button>
   </form>
 </div>

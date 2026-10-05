@@ -268,7 +268,10 @@
     <a class="nav-link" href="{{ url_for('student_cabinet') }}">Работы</a>
     {% endif %}
     <span class="user-info">{{ current_login }}<span class="role-badge">{{ role_label }}</span></span>
-    <a class="nav-link" href="{{ url_for('logout') }}">Выйти</a>
+    <form method="post" action="{{ url_for('logout') }}" class="nav-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button type="submit" class="nav-link">Выйти</button>
+    </form>
   </nav>
   {% endif %}
 </header>

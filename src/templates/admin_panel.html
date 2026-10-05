@@ -17,6 +17,8 @@
     <span>Групп — <b>{{ group_count }}</b></span>
     <span>Работ — <b>{{ work_count }}</b></span>
     <span>Задач — <b>{{ task_count }}</b></span>
+    <span>Судья — <b>{{ 'работает' if judge.sandbox else 'не изолирует код, проверка отключена' }}</b>
+      ({{ judge.memory_mb }} МБ, {{ judge.timeout }} с)</span>
   </div>
 </div>
 
@@ -27,6 +29,7 @@
       <button class="btn" type="button" onclick="toggleNewWork()">Новая работа</button>
     </div>
     <form id="new-work-form" method="post" action="{{ url_for('admin_work_new') }}" hidden>
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <div class="divider" style="margin:16px 0 20px;"></div>
       <div class="row2">
         <div><label>Название</label><input type="text" name="title" required></div>
@@ -85,11 +88,13 @@
       {% endif %}
       <div class="btn-row">
         <form id="work-edit-{{ w.id }}" method="post" action="{{ url_for('admin_work_detail', work_id=w.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <input type="hidden" name="action" value="edit">
           <button class="btn" type="submit">Сохранить изменения</button>
         </form>
         <form method="post" action="{{ url_for('admin_work_delete', work_id=w.id) }}"
               onsubmit="return confirm('Удалить работу «{{ w.title }}» вместе со всеми задачами?');">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <button class="btn btn-danger" type="submit">Удалить работу</button>
         </form>
       </div>
@@ -98,6 +103,7 @@
 
       <h2 style="font-size:.95rem;">Кому видна работа</h2>
       <form method="post" action="{{ url_for('admin_work_detail', work_id=w.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <input type="hidden" name="action" value="groups">
         <div class="groups-box">
           {% if groups %}
@@ -115,6 +121,7 @@
       <h2 style="font-size:.95rem;">Задачи</h2>
       <div class="new-task-box" id="new-task-box-{{ w.id }}" hidden>
         <form id="new-task-{{ w.id }}" method="post" action="{{ url_for('admin_task_new', work_id=w.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <div class="field"><label>Название задачи</label><input type="text" name="title" required></div>
           <div class="field"><label>Условие</label><textarea name="statement" rows="2"></textarea></div>
           <div class="row2">
@@ -153,6 +160,7 @@
             <button class="link-act" type="button" onclick="toggleTaskEdit({{ t.id }})">Изменить</button>
             <form method="post" action="{{ url_for('admin_task_delete', task_id=t.id) }}"
                   onsubmit="return confirm('Удалить задачу «{{ t.title }}» и все её тесты?');" style="margin:0;">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
               <button class="link-act danger" type="submit">Удалить</button>
             </form>
           </span>
@@ -181,6 +189,7 @@
           <div id="task-edit-{{ t.id }}" hidden>
             <div class="divider" style="margin:0 0 14px;"></div>
             <form method="post" action="{{ url_for('admin_task_edit', task_id=t.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
               <div class="field"><label>Название</label><input type="text" name="title" value="{{ t.title }}" required></div>
               <div class="field"><label>Условие</label><textarea name="statement" rows="3">{{ t.statement }}</textarea></div>
               <div class="row2">
@@ -198,6 +207,7 @@
               <div><label>Вывод</label><textarea name="output_data" rows="2" form="test-new-{{ t.id }}"></textarea></div>
               <div style="flex:0 0 auto; padding-bottom:4px;">
                 <form id="test-new-{{ t.id }}" method="post" action="{{ url_for('admin_test_new', task_id=t.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                   <button class="btn btn-outline btn-sm" type="submit">Добавить тест</button>
                 </form>
               </div>
@@ -206,6 +216,7 @@
             <details class="bulk-box">
               <summary>Добавить несколько тестов сразу</summary>
               <form method="post" action="{{ url_for('admin_test_bulk', task_id=t.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                 <textarea name="bulk_data" rows="8"></textarea>
                 <div class="btn-row"><button class="btn btn-outline btn-sm" type="submit">Добавить тесты</button></div>
               </form>
@@ -217,6 +228,7 @@
                 <span class="test-name">ТЕСТ {{ loop.index }}</span>
                 <form method="post" action="{{ url_for('admin_test_delete', test_id=t2.id) }}"
                       onsubmit="return confirm('Удалить этот тест?');" style="margin:0;">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                   <button class="link-act danger" type="submit">Удалить</button>
                 </form>
               </div>
@@ -228,6 +240,7 @@
                 <summary class="link-act" style="font-size:.8rem;">Редактировать тест</summary>
                 <div class="edit-body">
                   <form method="post" action="{{ url_for('admin_test_edit', test_id=t2.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                     <div class="field" style="margin-bottom:8px;"><label>Ввод</label><textarea name="input_data" rows="2">{{ t2.input_data }}</textarea></div>
                     <div class="field" style="margin-bottom:10px;"><label>Вывод</label><textarea name="output_data" rows="2">{{ t2.output_data }}</textarea></div>
                     <button class="btn btn-outline btn-sm" type="submit">Сохранить</button>
@@ -261,6 +274,7 @@
       <button class="btn" type="button" onclick="toggleNewStudent()">Добавить студента</button>
     </div>
     <form id="new-student-form" method="post" action="{{ url_for('admin_student_new') }}" hidden>
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <div class="divider" style="margin:16px 0 20px;"></div>
       <div class="row2">
         <div><label>Логин</label><input type="text" name="login" required></div>
@@ -294,10 +308,12 @@
           <button class="link-act" type="button" onclick="toggleStudentEdit({{ s.id }})" style="margin-left:12px;">Изменить</button>
           <form method="post" action="{{ url_for('admin_student_reset', user_id=s.id) }}" style="display:inline;"
                 onsubmit="return confirm('Сбросить пароль студента {{ s.login }}?');">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <button class="link-act" type="submit" style="margin-left:12px;">Сброс пароля</button>
           </form>
           <form method="post" action="{{ url_for('admin_student_delete', user_id=s.id) }}" style="display:inline;"
                 onsubmit="return confirm('Удалить студента {{ s.login }}?');">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <button class="link-act danger" type="submit" style="margin-left:12px;">Удалить</button>
           </form>
         </td>
@@ -305,6 +321,7 @@
       <tr id="student-edit-{{ s.id }}" hidden>
         <td colspan="3">
           <form method="post" action="{{ url_for('admin_student_edit', user_id=s.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <div class="row2">
               <div><label>Логин</label><input type="text" name="login" value="{{ s.login }}"></div>
               <div style="flex:1.4;"><label>ФИО</label><input type="text" name="full_name" value="{{ s.full_name }}"></div>

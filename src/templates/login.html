@@ -6,6 +6,7 @@
     <h1 style="font-size:1.4rem;">LMS3301</h1>
   </div>
   <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <div class="field">
       <label for="login">Логин</label>
       <input type="text" id="login" name="login" autocomplete="username" autofocus required>
