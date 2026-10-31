@@ -160,6 +160,16 @@
       ta.selectionStart = ta.selectionEnd = s + 2;
       save();
     }
+    if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      var start = ta.selectionStart, end = ta.selectionEnd;
+      var lineStart = ta.value.lastIndexOf('\n', start - 1) + 1;
+      var line = ta.value.slice(lineStart, start);
+      var indent = (line.match(/^[ \t]*/) || [''])[0];
+      if (line.replace(/[ \t]+$/, '').endsWith(':')) indent += '  ';
+      ta.setRangeText('\n' + indent, start, end, 'end');
+      save();
+    }
   });
   document.getElementById('clear-btn').addEventListener('click', function () {
     ta.value = '';
