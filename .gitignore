@@ -4,3 +4,4 @@ src/lms.db
 src/lms.db.*
 src/.secret_key
 .venv/
+src/static/uploads/

@@ -43,6 +43,7 @@ def init_db():
             statement TEXT NOT NULL DEFAULT '',
             input_format TEXT NOT NULL DEFAULT '',
             output_format TEXT NOT NULL DEFAULT '',
+            image TEXT NOT NULL DEFAULT '',
             created_by INTEGER REFERENCES users(id)
         );
 
@@ -88,6 +89,8 @@ def init_db():
     tcols = {r["name"] for r in db.execute("PRAGMA table_info(tasks)").fetchall()}
     if "score" in tcols:
         db.execute("ALTER TABLE tasks DROP COLUMN score")
+    if "image" not in tcols:
+        db.execute("ALTER TABLE tasks ADD COLUMN image TEXT NOT NULL DEFAULT ''")
 
     scols = {r["name"] for r in db.execute("PRAGMA table_info(submissions)").fetchall()}
     if "comment" not in scols:

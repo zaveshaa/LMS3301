@@ -1,118 +1,145 @@
 {% extends "base.html" %}
 {% block title %}{{ task.title }} — LMS3301{% endblock %}
+{% block main_class %}task-main{% endblock %}
 {% block content %}
-<div class="breadcrumb">
-  <a href="{{ url_for('student_cabinet') }}">Мои работы</a>
-  <span class="sep">/</span>
-  <a href="{{ url_for('student_work', work_id=work.id) }}">{{ work.title }}</a>
-  <span class="sep">/</span>
-  <span>{{ task.title }}</span>
+<div class="task-page">
+<div class="task-topbar">
+  <div class="breadcrumb">
+    <a href="{{ url_for('student_cabinet') }}">Мои работы</a>
+    <span class="sep">/</span>
+    <a href="{{ url_for('student_work', work_id=work.id) }}">{{ work.title }}</a>
+    <span class="sep">/</span>
+    <span>{{ task.title }}</span>
+  </div>
+  <div class="task-switcher">
+    <span class="task-switcher-label">Задача {{ task_index + 1 }} из {{ work_tasks|length }}</span>
+    {% if prev_task %}
+    <a class="btn btn-outline btn-sm" href="{{ url_for('student_task', work_id=work.id, task_id=prev_task.id) }}" title="{{ prev_task.title }}">←</a>
+    {% endif %}
+    {% for wt in work_tasks %}
+    <a class="btn btn-sm {{ 'is-active' if wt.id == task.id else 'btn-outline' }}" href="{{ url_for('student_task', work_id=work.id, task_id=wt.id) }}" title="{{ wt.title }}">{{ loop.index }}</a>
+    {% endfor %}
+    {% if next_task %}
+    <a class="btn btn-outline btn-sm" href="{{ url_for('student_task', work_id=work.id, task_id=next_task.id) }}" title="{{ next_task.title }}">→</a>
+    {% endif %}
+  </div>
 </div>
 
 <div class="task-layout">
   <div class="info-col">
-    <div class="card">
+    <div class="card info-card">
       <div class="statement-block">{{ task.statement or 'Условие ещё не добавлено.' }}</div>
-    </div>
+      {% if task.image %}
+      <div class="task-image-wrap">
+        <a class="task-image-link" href="{{ url_for('static', filename=task.image) }}" target="_blank" rel="noopener">
+          <img class="task-image" src="{{ url_for('static', filename=task.image) }}" alt="Изображение к задаче">
+        </a>
+      </div>
+      {% endif %}
 
-    {% if task.input_format or task.output_format %}
-    <div class="card">
-      <h2>Формат</h2>
-      <div class="cf-text"><b class="cf-label">Ввод:</b> {{ task.input_format or '—' }}</div>
-      <div class="cf-text" style="margin-top:8px;"><b class="cf-label">Вывод:</b> {{ task.output_format or '—' }}</div>
-    </div>
-    {% endif %}
+      {% if task.input_format or task.output_format %}
+      <div class="info-divider"></div>
+      <div class="info-heading">Формат</div>
+      <div class="format-grid">
+        <div class="cf-text"><b class="cf-label">Ввод:</b> {{ task.input_format or '—' }}</div>
+        <div class="cf-text"><b class="cf-label">Вывод:</b> {{ task.output_format or '—' }}</div>
+      </div>
+      {% endif %}
 
-    {% if tests %}
-    <div class="card">
-      <h2>Примеры</h2>
-      {% for tc in tests[:2] %}
-      <div class="cf-example-title">Пример {{ loop.index }}</div>
-      <pre class="cf-code">{{ tc.input_data if tc.input_data else 'нет входных данных' }}</pre>
-      <pre class="cf-code">{{ tc.output_data }}</pre>
-      {% endfor %}
+      {% if tests %}
+      <div class="info-divider"></div>
+      <div class="info-heading">Примеры</div>
+      <div class="examples-grid">
+        {% for tc in tests[:2] %}
+        <div class="example-box">
+          <div class="cf-example-title">Пример {{ loop.index }}</div>
+          <pre class="cf-code">{{ tc.input_data if tc.input_data else 'нет входных данных' }}</pre>
+          <pre class="cf-code">{{ tc.output_data }}</pre>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
   </div>
 
   <div class="solve-col">
-    <div class="card">
-      <h2>Ваше решение</h2>
-      {% if submission %}
-      <div class="submit-status">
-        <span class="status-badge status-{{ submission.status }}">{{ status_label[submission.status] }}</span>
-        <span>Попытка №{{ attempt_count }} · {{ submission.created_at }}</span>
+    <div class="card solve-card">
+      <div class="solve-head">
+        <h2>Ваше решение</h2>
+        {% if submission %}
+        <div class="submit-status compact">
+          <span class="status-badge status-{{ submission.status }}">{{ status_label[submission.status] }}</span>
+          <span class="tiny">Попытка №{{ attempt_count }}</span>
+        </div>
+        {% endif %}
       </div>
-      {% if submission.comment %}
+      {% if submission and submission.comment %}
       <div class="submit-comment">{{ submission.comment }}</div>
       {% endif %}
-      {% endif %}
-      <form method="post" action="{{ url_for('student_submit', work_id=work.id, task_id=task.id) }}"
+      <form class="solve-form" method="post" action="{{ url_for('student_submit', work_id=work.id, task_id=task.id) }}"
             onsubmit="return confirm('Отправить решение на проверку?');">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <textarea class="code-editor" id="code" name="code" spellcheck="false">{{ submission.code if submission else '' }}</textarea>
         <div class="solution-actions">
-          <button type="submit" class="btn">Отправить на проверку</button>
+          <button class="btn" id="run-btn" type="button">Запустить</button>
+          <button class="btn" type="submit">Отправить</button>
           <button class="btn btn-outline" id="clear-btn" type="button">Очистить</button>
         </div>
       </form>
 
-      {% if submission_tests %}
-      {% set passed_count = submission_tests | selectattr('passed') | list | length %}
-      <div class="verdict-summary">
-        <span class="status-badge {{ 'status-ok' if passed_count == submission_tests | length else 'status-error' }}">
-          {{ 'ЗАЧТЕНО' if passed_count == submission_tests | length else 'НЕ ЗАЧТЕНО' }}
-        </span>
-        <span class="v-meta">Пройдено {{ passed_count }} из {{ submission_tests | length }} тестов</span>
+      <div class="run-inline" id="run-result" hidden>
+        <div class="run-inline-head"><span>Запуск · тест 1</span><span id="run-meta"></span></div>
+        <pre id="run-output"></pre>
       </div>
-      <table class="verdict-tests">
-        <tr>
-          <th>#</th>
-          <th>Вердикт</th>
-          <th>Получено</th>
-          <th>Причина</th>
-        </tr>
-        {% for st in submission_tests %}
-        <tr class="{{ 'row-ok' if st.passed else 'row-err' }}">
-          <td class="t-num">{{ loop.index }}</td>
-          <td class="{{ 'v-ok' if st.passed else 'v-err' }}">
-            {% if st.passed %}OK
-            {% elif st.error.startswith('Превышено время') %}TLE
-            {% elif st.error.startswith('Превышен лимит') %}MLE
-            {% elif st.error.startswith('Ошибка') %}RE
-            {% else %}WA{% endif %}
-          </td>
-          <td><pre>{{ st.actual_output if st.actual_output else '(пусто)' }}</pre></td>
-          <td class="tiny">
-            {% if not st.passed %}{{ st.error }}{% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </table>
-      {% elif submission %}
-      <div class="verdict-summary">
-        <span class="status-badge status-{{ submission.status }}">{{ status_label[submission.status] }}</span>
-        <span class="v-meta">детализация по тестам ещё не сохранена</span>
-      </div>
-      {% endif %}
     </div>
   </div>
+</div>
 </div>
 
-<div class="card">
-  <h2>Запуск</h2>
-  <div class="run-stdin-label">Входные данные (stdin)</div>
-  <textarea class="run-stdin" id="run-stdin" spellcheck="false" placeholder="введите данные, например:&#10;5&#10;1 2 3 4 5"></textarea>
-  <div class="solution-actions">
-    <button class="btn btn-sm" id="run-btn" type="button">Запустить</button>
+{% if submission_tests %}
+{% set passed_count = submission_tests | selectattr('passed') | list | length %}
+<div class="card verdict-card">
+  <div class="verdict-summary">
+    <span class="status-badge {{ 'status-ok' if passed_count == submission_tests | length else 'status-error' }}">
+      {{ 'ЗАЧТЕНО' if passed_count == submission_tests | length else 'НЕ ЗАЧТЕНО' }}
+    </span>
+    <span class="v-meta">Пройдено {{ passed_count }} из {{ submission_tests | length }} тестов</span>
   </div>
-  <div class="run-output" id="run-term" style="margin-top:12px;">
-    <div class="run-bar">результат</div>
-    <div class="run-body">
-      <div class="run-empty">— вывод появится здесь —</div>
-    </div>
+  <div class="verdict-table-wrap">
+    <table class="verdict-tests">
+      <tr>
+        <th>#</th>
+        <th>Вердикт</th>
+        <th>Получено</th>
+        <th>Причина</th>
+      </tr>
+      {% for st in submission_tests %}
+      <tr class="{{ 'row-ok' if st.passed else 'row-err' }}">
+        <td class="t-num">{{ loop.index }}</td>
+        <td class="{{ 'v-ok' if st.passed else 'v-err' }}">
+          {% if st.passed %}OK
+          {% elif st.error.startswith('Превышено время') %}TLE
+          {% elif st.error.startswith('Превышен лимит') %}MLE
+          {% elif st.error.startswith('Ошибка') %}RE
+          {% else %}WA{% endif %}
+        </td>
+        <td><pre>{{ st.actual_output if st.actual_output else '(пусто)' }}</pre></td>
+        <td class="tiny">
+          {% if not st.passed %}{{ st.error }}{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
   </div>
 </div>
+{% elif submission %}
+<div class="card verdict-card">
+  <div class="verdict-summary">
+    <span class="status-badge status-{{ submission.status }}">{{ status_label[submission.status] }}</span>
+    <span class="v-meta">детализация по тестам ещё не сохранена</span>
+  </div>
+</div>
+{% endif %}
 
 <script>
 (function () {
@@ -140,19 +167,21 @@
     ta.focus();
   });
 
-  function esc(s) {
-    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
   var runBtn = document.getElementById('run-btn');
-  var runBody = document.getElementById('run-term').querySelector('.run-body');
-  var runStdin = document.getElementById('run-stdin');
+  var runResult = document.getElementById('run-result');
+  var runOutput = document.getElementById('run-output');
+  var runMeta = document.getElementById('run-meta');
+  var sampleInput = {{ (tests[0].input_data if tests else '')|tojson }};
   runBtn.addEventListener('click', function () {
     runBtn.disabled = true;
     runBtn.textContent = 'Запуск…';
-    runBody.innerHTML = '<span class="run-empty">выполнение…</span>';
+    runResult.hidden = false;
+    runResult.classList.remove('is-error');
+    runOutput.textContent = 'выполнение…';
+    runMeta.textContent = '';
     var q = new URLSearchParams();
     q.set('code', ta.value);
-    q.set('stdin', runStdin.value);
+    q.set('stdin', sampleInput);
     fetch('{{ url_for("student_task_run", work_id=work.id, task_id=task.id) }}', {
       method: 'POST',
       headers: {
@@ -161,24 +190,26 @@
       },
       body: q.toString()
     }).then(function (r) { return r.json(); }).then(function (d) {
-      var html = '';
-      if (d.error) html += '<div class="run-stderr"><pre>' + esc(d.error) + '</pre></div>';
-      else {
-        if (d.stderr) html += '<div class="run-stderr"><pre>' + esc(d.stderr) + '</pre></div>';
-        if (d.stdout) html += '<pre>' + esc(d.stdout) + '</pre>';
-        else html += '<span class="run-empty">(пустой вывод)</span>';
-        html += '<div class="run-meta">';
-        if (d.status_id === 3) html += 'ОК';
-        else if (d.status_id === 5) html += 'Превышено время выполнения';
-        else html += 'Ошибка выполнения (exit 1)';
-        html += ' · ' + d.elapsed + ' с</div>';
+      if (d.error) {
+        runResult.classList.add('is-error');
+        runOutput.textContent = d.error;
+        return;
       }
-      runBody.innerHTML = html;
+      var text = '';
+      if (d.stderr) {
+        text += d.stderr;
+        runResult.classList.add('is-error');
+      }
+      if (d.stdout) text += d.stdout;
+      runOutput.textContent = text || '(пустой вывод)';
+      runMeta.textContent = (d.status_id === 3 ? 'ОК' : d.status_id === 5 ? 'TLE' : 'RE') + ' · ' + d.elapsed + ' с';
     }).catch(function (err) {
-      runBody.innerHTML = '<div class="run-stderr"><pre>' + esc(String(err)) + '</pre></div>';
+      runResult.classList.add('is-error');
+      runOutput.textContent = String(err);
     }).finally(function () {
       runBtn.disabled = false;
       runBtn.textContent = 'Запустить';
+      runResult.scrollIntoView({ block: 'nearest' });
     });
   });
 })();

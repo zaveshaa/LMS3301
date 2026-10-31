@@ -16,9 +16,12 @@ from db import get_db, init_db
 from offline_judge import JudgeUnavailable, check_code, judge_status, run_code
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TASK_IMAGE_DIR = os.path.join(BASE_DIR, "static", "uploads", "tasks")
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
-app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 6 * 1024 * 1024
 
 
 def _load_secret_key():
@@ -238,6 +241,40 @@ def render_lecture(content):
 app.add_template_filter(render_lecture, name="lecture")
 
 
+def _image_extension(filename):
+    return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+
+def save_task_image(file_storage):
+    if file_storage is None or not file_storage.filename:
+        return None
+    ext = _image_extension(file_storage.filename)
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError("Поддерживаются только изображения: PNG, JPG, GIF, WEBP")
+    data = file_storage.read(MAX_IMAGE_BYTES + 1)
+    if len(data) > MAX_IMAGE_BYTES:
+        raise ValueError("Изображение больше 5 МБ")
+    if not data:
+        return None
+    os.makedirs(TASK_IMAGE_DIR, exist_ok=True)
+    name = secrets.token_hex(16) + "." + ext
+    with open(os.path.join(TASK_IMAGE_DIR, name), "wb") as f:
+        f.write(data)
+    return "uploads/tasks/" + name
+
+
+def delete_task_image(rel_path):
+    if not rel_path:
+        return
+    name = os.path.basename(rel_path)
+    if not name:
+        return
+    try:
+        os.remove(os.path.join(TASK_IMAGE_DIR, name))
+    except FileNotFoundError:
+        pass
+
+
 def parse_bulk_tests(text):
     blocks = re.split(r"(?m)^\s*-{3}\s*$", text)
     tests = []
@@ -292,8 +329,8 @@ def login():
         if not check_login_rate(ip):
             flash("Слишком много попыток входа. Подождите 5 минут", "error")
             return render_template("login.html")
-        login_val = request.form["login"].strip()
-        password = request.form["password"]
+        login_val = request.form.get("login", "").strip()
+        password = request.form.get("password", "")
         db = get_db()
         user = db.execute("SELECT * FROM users WHERE login = ?", (login_val,)).fetchone()
         db.close()
@@ -389,6 +426,12 @@ def student_task(work_id, task_id):
         "SELECT COUNT(*) FROM submissions WHERE task_id = ? AND user_id = ?",
         (task_id, user["id"]),
     ).fetchone()[0]
+    work_tasks = db.execute(
+        "SELECT id, title FROM tasks WHERE work_id = ? ORDER BY id", (work_id,)
+    ).fetchall()
+    task_index = next((i for i, t in enumerate(work_tasks) if t["id"] == task_id), 0)
+    prev_task = work_tasks[task_index - 1] if task_index > 0 else None
+    next_task = work_tasks[task_index + 1] if task_index + 1 < len(work_tasks) else None
     db.close()
     return render_template(
         "task_detail.html",
@@ -398,6 +441,10 @@ def student_task(work_id, task_id):
         submission=submission,
         submission_tests=submission_tests,
         attempt_count=attempt_count,
+        work_tasks=work_tasks,
+        task_index=task_index,
+        prev_task=prev_task,
+        next_task=next_task,
     )
 
 
@@ -555,10 +602,10 @@ def admin_works():
 @role_required("admin")
 def admin_work_new():
     if request.method == "POST":
-        title = request.form["title"].strip()
-        wtype = request.form["type"]
-        description = request.form["description"].strip()
-        content = request.form["content"].strip()
+        title = request.form.get("title", "").strip()
+        wtype = request.form.get("type", "practical")
+        description = request.form.get("description", "").strip()
+        content = request.form.get("content", "").strip()
         if not title:
             flash("Укажите название работы")
         else:
@@ -588,10 +635,16 @@ def admin_work_detail(work_id):
         return redirect(admin_url("works"))
     action = request.form.get("action")
     if action == "edit":
-        title = request.form["title"].strip()
-        wtype = request.form["type"]
-        description = request.form["description"].strip()
-        content = request.form["content"].strip()
+        title = request.form.get("title", "").strip()
+        wtype = request.form.get("type", work["type"])
+        description = request.form.get("description")
+        content = request.form.get("content")
+        if description is None:
+            description = work["description"]
+        if content is None:
+            content = work["content"]
+        description = description.strip()
+        content = content.strip()
         if not title:
             flash("Укажите название работы")
         else:
@@ -623,6 +676,8 @@ def admin_work_delete(work_id):
         db.close()
         flash("Работа не найдена", "error")
         return redirect(admin_url("works"))
+    for row in db.execute("SELECT image FROM tasks WHERE work_id = ?", (work_id,)).fetchall():
+        delete_task_image(row["image"])
     db.execute("DELETE FROM submissions WHERE task_id IN (SELECT id FROM tasks WHERE work_id = ?)", (work_id,))
     db.execute("DELETE FROM tests WHERE task_id IN (SELECT id FROM tasks WHERE work_id = ?)", (work_id,))
     db.execute("DELETE FROM tasks WHERE work_id = ?", (work_id,))
@@ -641,17 +696,22 @@ def admin_work_delete(work_id):
 @role_required("admin")
 def admin_task_new(work_id):
     if request.method == "POST":
-        title = request.form["title"].strip()
-        statement = request.form["statement"].strip()
+        title = request.form.get("title", "").strip()
+        statement = request.form.get("statement", "").strip()
         input_format = request.form.get("input_format", "").strip()
         output_format = request.form.get("output_format", "").strip()
         if not title:
             flash("Укажите название задачи")
         else:
+            try:
+                image = save_task_image(request.files.get("image"))
+            except ValueError as exc:
+                flash(str(exc), "error")
+                return redirect(admin_url(f"work-{work_id}"))
             db = get_db()
             db.execute(
-                "INSERT INTO tasks (work_id, title, statement, input_format, output_format, created_by) VALUES (?, ?, ?, ?, ?, ?)",
-                (work_id, title, statement, input_format, output_format, get_user()["id"]),
+                "INSERT INTO tasks (work_id, title, statement, input_format, output_format, image, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (work_id, title, statement, input_format, output_format, image or "", get_user()["id"]),
             )
             task_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
             inputs = request.form.getlist("inp")
@@ -682,16 +742,29 @@ def admin_task_edit(task_id):
         flash("Задача не найдена", "error")
         return redirect(admin_url("works"))
     if request.method == "POST":
-        title = request.form["title"].strip()
-        statement = request.form["statement"].strip()
-        input_format = request.form["input_format"].strip()
-        output_format = request.form["output_format"].strip()
+        title = request.form.get("title", "").strip()
+        statement = request.form.get("statement", "").strip()
+        input_format = request.form.get("input_format", "").strip()
+        output_format = request.form.get("output_format", "").strip()
         if not title:
             flash("Укажите название задачи")
         else:
+            image = task["image"]
+            try:
+                new_image = save_task_image(request.files.get("image"))
+            except ValueError as exc:
+                flash(str(exc), "error")
+                db.close()
+                return redirect(admin_url(f"work-{task['work_id']}task-{task_id}"))
+            if new_image:
+                delete_task_image(task["image"])
+                image = new_image
+            elif request.form.get("remove_image"):
+                delete_task_image(task["image"])
+                image = ""
             db.execute(
-                "UPDATE tasks SET title = ?, statement = ?, input_format = ?, output_format = ? WHERE id = ?",
-                (title, statement, input_format, output_format, task_id),
+                "UPDATE tasks SET title = ?, statement = ?, input_format = ?, output_format = ?, image = ? WHERE id = ?",
+                (title, statement, input_format, output_format, image, task_id),
             )
             db.commit()
     db.close()
@@ -703,11 +776,12 @@ def admin_task_edit(task_id):
 @role_required("admin")
 def admin_task_delete(task_id):
     db = get_db()
-    task = db.execute("SELECT id, work_id FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    task = db.execute("SELECT id, work_id, image FROM tasks WHERE id = ?", (task_id,)).fetchone()
     if task is None:
         db.close()
         flash("Задача не найдена", "error")
         return redirect(admin_url("works"))
+    delete_task_image(task["image"])
     db.execute("DELETE FROM submissions WHERE task_id = ?", (task_id,))
     db.execute("DELETE FROM tests WHERE task_id = ?", (task_id,))
     db.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
@@ -728,8 +802,8 @@ def task_work_id(db, task_id):
 @login_required
 @role_required("admin")
 def admin_test_new(task_id):
-    input_data = request.form["input_data"]
-    output_data = request.form["output_data"]
+    input_data = request.form.get("input_data", "")
+    output_data = request.form.get("output_data", "")
     db = get_db()
     work_id = task_work_id(db, task_id)
     if output_data.strip() == "":
@@ -781,8 +855,8 @@ def admin_test_edit(test_id):
         return redirect(admin_url("works"))
     task = db.execute("SELECT work_id FROM tasks WHERE id = ?", (test["task_id"],)).fetchone()
     work_id = task["work_id"] if task else None
-    input_data = request.form["input_data"]
-    output_data = request.form["output_data"].strip()
+    input_data = request.form.get("input_data", "")
+    output_data = request.form.get("output_data", "").strip()
     if not output_data:
         flash("Тест должен содержать ожидаемый вывод", "error")
     else:
@@ -827,8 +901,8 @@ def admin_students():
 @role_required("admin")
 def admin_student_new():
     if request.method == "POST":
-        login_val = request.form["login"].strip()
-        full_name = request.form["full_name"].strip()
+        login_val = request.form.get("login", "").strip()
+        full_name = request.form.get("full_name", "").strip()
         if not login_val:
             flash("Укажите логин студента")
         else:
@@ -861,8 +935,8 @@ def admin_student_edit(user_id):
         db.close()
         flash("Студент не найден", "error")
         return redirect(admin_url("students"))
-    login_val = request.form["login"].strip()
-    full_name = request.form["full_name"].strip()
+    login_val = request.form.get("login", "").strip()
+    full_name = request.form.get("full_name", "").strip()
     if not login_val:
         flash("Укажите логин")
     else:

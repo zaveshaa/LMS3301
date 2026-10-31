@@ -120,10 +120,15 @@
       {% if w['type'] == 'practical' %}
       <h2 style="font-size:.95rem;">Задачи</h2>
       <div class="new-task-box" id="new-task-box-{{ w.id }}" hidden>
-        <form id="new-task-{{ w.id }}" method="post" action="{{ url_for('admin_task_new', work_id=w.id) }}">
+        <form id="new-task-{{ w.id }}" method="post" action="{{ url_for('admin_task_new', work_id=w.id) }}" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <div class="field"><label>Название задачи</label><input type="text" name="title" required></div>
           <div class="field"><label>Условие</label><textarea name="statement" rows="2"></textarea></div>
+          <div class="field">
+            <label>Изображение к условию</label>
+            <input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
+            <div class="hint">PNG, JPG, GIF или WEBP, до 5 МБ.</div>
+          </div>
           <div class="row2">
             <div><label>Формат ввода</label><textarea name="input_format" rows="2"></textarea></div>
             <div><label>Формат вывода</label><textarea name="output_format" rows="2"></textarea></div>
@@ -186,15 +191,32 @@
             </div>
           </div>
 
+          {% if t.image %}
+          <div class="tc-image">
+            <img class="task-thumb" src="{{ url_for('static', filename=t.image) }}" alt="Изображение к задаче">
+          </div>
+          {% endif %}
+
           <div id="task-edit-{{ t.id }}" hidden>
             <div class="divider" style="margin:0 0 14px;"></div>
-            <form method="post" action="{{ url_for('admin_task_edit', task_id=t.id) }}">
+            <form method="post" action="{{ url_for('admin_task_edit', task_id=t.id) }}" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
               <div class="field"><label>Название</label><input type="text" name="title" value="{{ t.title }}" required></div>
               <div class="field"><label>Условие</label><textarea name="statement" rows="3">{{ t.statement }}</textarea></div>
               <div class="row2">
                 <div><label>Формат ввода</label><textarea name="input_format" rows="2">{{ t.input_format }}</textarea></div>
                 <div><label>Формат вывода</label><textarea name="output_format" rows="2">{{ t.output_format }}</textarea></div>
+              </div>
+              {% if t.image %}
+              <div class="task-image-current">
+                <img class="task-thumb" src="{{ url_for('static', filename=t.image) }}" alt="Изображение к задаче">
+                <label class="g-check"><input type="checkbox" name="remove_image" value="1"> Удалить изображение</label>
+              </div>
+              {% endif %}
+              <div class="field">
+                <label>{{ 'Заменить изображение' if t.image else 'Изображение к условию' }}</label>
+                <input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
+                <div class="hint">PNG, JPG, GIF или WEBP, до 5 МБ.</div>
               </div>
               <div class="btn-row"><button class="btn btn-outline" type="submit">Сохранить задачу</button></div>
             </form>
